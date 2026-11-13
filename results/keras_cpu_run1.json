@@ -1,0 +1,52 @@
+{
+  "device": "cpu",
+  "run": "1",
+  "early_stopping": false,
+  "validation": false,
+  "cpu_cores": 20,
+  "data_prep_seconds": 0.45,
+  "modelos": {
+    "CNN-1 Baseline": {
+      "parametros": 4221405,
+      "epocas": 5,
+      "train_seconds": 21.0,
+      "epoch_seconds": [
+        4.54,
+        4.01,
+        4.22,
+        4.04,
+        4.19
+      ],
+      "accuracy": 0.8586206896551725,
+      "f1_macro": 0.8596935611679025
+    },
+    "CNN-2 Profunda": {
+      "parametros": 519069,
+      "epocas": 5,
+      "train_seconds": 110.51,
+      "epoch_seconds": [
+        23.22,
+        22.08,
+        21.74,
+        21.68,
+        21.78
+      ],
+      "accuracy": 0.506896551724138,
+      "f1_macro": 0.48693896911992307
+    },
+    "CNN-3 Regularizada": {
+      "parametros": 448925,
+      "epocas": 5,
+      "train_seconds": 115.22,
+      "epoch_seconds": [
+        23.53,
+        22.73,
+        23.02,
+        22.96,
+        22.97
+      ],
+      "accuracy": 0.576551724137931,
+      "f1_macro": 0.5439477918156312
+    }
+  }
+}

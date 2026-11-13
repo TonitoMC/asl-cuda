@@ -13,7 +13,11 @@ pillow>=10.3.0
 jupyter>=1.0.0
 ipykernel>=6.29.0
 
-# Fase GPU (todavía no se usa en el notebook 01)
-# torch>=2.5.0   # instalar con el índice de CUDA que corresponda
-# numba>=0.60.0
-# matplotlib>=3.9.0
+# Fase GPU. Torch se instala aparte con el índice de CUDA que corresponda
+# (el benchmark corre con el Python del sistema, que ya lo tiene)
+# torch>=2.5.0
+# matplotlib>=3.9.0      # gráficas de evidencia
+# psutil>=5.9.0          # evidence.py
+
+# CNN desde cero
+# cupy-cuda12x>=13.0     # solo quien haga la versión GPU

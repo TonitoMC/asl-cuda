@@ -1,0 +1,119 @@
+{
+  "device": "cuda",
+  "run": "2",
+  "framework": "torch",
+  "torch": "2.9.1+cu128",
+  "cpu_threads": 14,
+  "gpu": "NVIDIA GeForce RTX 4070 SUPER",
+  "batch": 64,
+  "train_decode_1_workers_s": 3.231,
+  "train_decode_20_workers_s": 0.564,
+  "data_prep_seconds": 0.864,
+  "modelos": {
+    "CNN-1 Baseline": {
+      "parametros": 4221405,
+      "epocas": 5,
+      "train_seconds": 2.415,
+      "epoch_seconds": [
+        0.657,
+        0.448,
+        0.449,
+        0.43,
+        0.426
+      ],
+      "gather_seconds": [
+        0.015,
+        0.017,
+        0.018,
+        0.017,
+        0.017
+      ],
+      "h2d_seconds": [
+        0.039,
+        0.048,
+        0.048,
+        0.046,
+        0.046
+      ],
+      "step_seconds": [
+        0.614,
+        0.394,
+        0.395,
+        0.379,
+        0.376
+      ],
+      "eval_seconds": 0.109,
+      "accuracy": 0.7896551724137931
+    },
+    "CNN-2 Profunda": {
+      "parametros": 519069,
+      "epocas": 5,
+      "train_seconds": 7.603,
+      "epoch_seconds": [
+        1.68,
+        1.478,
+        1.471,
+        1.488,
+        1.483
+      ],
+      "gather_seconds": [
+        0.035,
+        0.042,
+        0.036,
+        0.037,
+        0.037
+      ],
+      "h2d_seconds": [
+        0.052,
+        0.042,
+        0.048,
+        0.054,
+        0.053
+      ],
+      "step_seconds": [
+        1.623,
+        1.43,
+        1.418,
+        1.428,
+        1.424
+      ],
+      "eval_seconds": 0.264,
+      "accuracy": 0.4986206896551724
+    },
+    "CNN-3 Regularizada": {
+      "parametros": 448925,
+      "epocas": 5,
+      "train_seconds": 7.669,
+      "epoch_seconds": [
+        1.568,
+        1.525,
+        1.523,
+        1.527,
+        1.524
+      ],
+      "gather_seconds": [
+        0.038,
+        0.035,
+        0.038,
+        0.038,
+        0.038
+      ],
+      "h2d_seconds": [
+        0.047,
+        0.053,
+        0.054,
+        0.054,
+        0.053
+      ],
+      "step_seconds": [
+        1.515,
+        1.466,
+        1.464,
+        1.468,
+        1.465
+      ],
+      "eval_seconds": 0.166,
+      "accuracy": 0.5558620689655173
+    }
+  }
+}

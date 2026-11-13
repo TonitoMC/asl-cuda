@@ -1,0 +1,77 @@
+{
+  "device": "cuda",
+  "run": "3",
+  "framework": "torch",
+  "torch": "2.9.1+cu128",
+  "cpu_threads": 14,
+  "gpu": "NVIDIA GeForce RTX 4070 SUPER",
+  "batch": 64,
+  "train_decode_1_workers_s": 3.312,
+  "train_decode_20_workers_s": 0.552,
+  "data_prep_seconds": 0.768,
+  "modelos": {
+    "CNN-1 Baseline": {
+      "parametros": 4221405,
+      "epocas": 5,
+      "train_seconds": 2.285,
+      "epoch_seconds": [
+        0.644,
+        0.411,
+        0.41,
+        0.41,
+        0.41
+      ],
+      "h2d_seconds": [
+        0.037,
+        0.036,
+        0.036,
+        0.036,
+        0.036
+      ],
+      "eval_seconds": 0.107,
+      "accuracy": 0.7972413793103448
+    },
+    "CNN-2 Profunda": {
+      "parametros": 519069,
+      "epocas": 5,
+      "train_seconds": 7.455,
+      "epoch_seconds": [
+        1.653,
+        1.451,
+        1.451,
+        1.451,
+        1.448
+      ],
+      "h2d_seconds": [
+        0.052,
+        0.052,
+        0.052,
+        0.052,
+        0.051
+      ],
+      "eval_seconds": 0.258,
+      "accuracy": 0.4820689655172414
+    },
+    "CNN-3 Regularizada": {
+      "parametros": 448925,
+      "epocas": 5,
+      "train_seconds": 7.421,
+      "epoch_seconds": [
+        1.529,
+        1.461,
+        1.469,
+        1.48,
+        1.482
+      ],
+      "h2d_seconds": [
+        0.05,
+        0.041,
+        0.044,
+        0.051,
+        0.051
+      ],
+      "eval_seconds": 0.162,
+      "accuracy": 0.5641379310344827
+    }
+  }
+}

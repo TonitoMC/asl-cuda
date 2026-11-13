@@ -66,7 +66,7 @@ sea lo que mejor encaja en una GPU.
   épocas y arruina la comparación.
 - Se cronometran por separado preparación de datos y entrenamiento, el notebook ya lo hace.
 - Corrida extra con `FORCE_CPU = False` como referencia "Keras en GPU".
-- Salida en `results/keras_cpu.json` y `results/keras_gpu.json`.
+- Salida en `results/keras_{cpu,gpu}_run{N}.json`.
 
 ### Fase 2. Port a PyTorch (pasos 3 y 4)
 - `src/asl/torch_data.py` (CPU): `Dataset` + `DataLoader` con `num_workers` y `pin_memory`.

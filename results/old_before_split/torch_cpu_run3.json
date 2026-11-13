@@ -1,0 +1,77 @@
+{
+  "device": "cpu",
+  "run": "3",
+  "framework": "torch",
+  "torch": "2.9.1+cu128",
+  "cpu_threads": 14,
+  "gpu": null,
+  "batch": 64,
+  "train_decode_1_workers_s": 3.271,
+  "train_decode_20_workers_s": 0.559,
+  "data_prep_seconds": 0.776,
+  "modelos": {
+    "CNN-1 Baseline": {
+      "parametros": 4221405,
+      "epocas": 5,
+      "train_seconds": 47.327,
+      "epoch_seconds": [
+        9.033,
+        8.843,
+        8.795,
+        9.461,
+        11.195
+      ],
+      "h2d_seconds": [
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001
+      ],
+      "eval_seconds": 0.468,
+      "accuracy": 0.7862068965517242
+    },
+    "CNN-2 Profunda": {
+      "parametros": 519069,
+      "epocas": 5,
+      "train_seconds": 173.378,
+      "epoch_seconds": [
+        35.455,
+        36.966,
+        33.708,
+        33.906,
+        33.343
+      ],
+      "h2d_seconds": [
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001
+      ],
+      "eval_seconds": 1.72,
+      "accuracy": 0.37655172413793103
+    },
+    "CNN-3 Regularizada": {
+      "parametros": 448925,
+      "epocas": 5,
+      "train_seconds": 174.557,
+      "epoch_seconds": [
+        34.475,
+        34.566,
+        36.19,
+        34.639,
+        34.686
+      ],
+      "h2d_seconds": [
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001
+      ],
+      "eval_seconds": 1.821,
+      "accuracy": 0.4517241379310345
+    }
+  }
+}

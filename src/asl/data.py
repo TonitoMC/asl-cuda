@@ -47,7 +47,8 @@ def resolve_dataset_root(custom_path: Optional[str] = None) -> Path:
     if (local_data / TRAIN_SUBDIR).exists():
         return local_data
 
-    cache_base = Path.home() / ".cache" / "kagglehub" / "datasets" / "grassknoted" / "asl-alphabet"
+    cache_base = (Path.home() / ".cache" / "kagglehub" / "datasets" / "grassknoted"
+                  / "asl-alphabet" / "versions")
     if cache_base.exists():
         for version in sorted(cache_base.iterdir(), reverse=True):
             if (version / TRAIN_SUBDIR).exists():
