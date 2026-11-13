@@ -1,0 +1,24 @@
+# Dataset (~1 GB, se descarga aparte). Los splits CSV sí se versionan.
+data/asl_alphabet_train/
+data/asl_alphabet_test/
+data/raw/
+*.jpg
+*.jpeg
+*.png
+
+# Pesos entrenados. Los resultados .json/.csv sí.
+*.keras
+*.h5
+*.pt
+*.pth
+models/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.ipynb_checkpoints/
+
+# Misc
+.DS_Store
+*.log
