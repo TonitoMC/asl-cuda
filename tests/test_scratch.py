@@ -110,3 +110,21 @@ def test_finite_differences():
             flat[i] = old
             num = (lp - lm) / (2 * h)
             assert abs(num - gflat[i]) < 2e-2 * max(1.0, abs(num)), (p.shape, num, gflat[i])
+
+
+@pytest.mark.skipif(not (ROOT / "data" / "cache" / "train_X.npy").exists(),
+                    reason="falta data/cache (correr src/scratch/cache_data.py)")
+def test_learns():
+    """CNN-1 supera 75 % de accuracy en test tras 5 épocas (~8 min en NumPy)."""
+    from scratch.cache_data import load_cached
+    X, y = load_cached("train")
+    Xt, yt = load_cached("test")
+    model = nc.cnn1(42)
+    opt = nc.Adam(model.params())
+    rng = np.random.RandomState(42)
+    for _ in range(5):
+        perm = rng.permutation(len(X))
+        for i in range(0, len(X), 64):
+            idx = perm[i:i + 64]
+            nc.train_step(model, opt, X[idx], y[idx])
+    assert (nc.predict(model, Xt) == yt).mean() > 0.75

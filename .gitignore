@@ -22,3 +22,7 @@ __pycache__/
 # Misc
 .DS_Store
 *.log
+
+# Cache de datos decodificados
+data/cache/
+*.npy
