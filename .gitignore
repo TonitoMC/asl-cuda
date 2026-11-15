@@ -5,6 +5,7 @@ data/raw/
 *.jpg
 *.jpeg
 *.png
+!results/**/*.png
 
 # Pesos entrenados. Los resultados .json/.csv sí.
 *.keras
