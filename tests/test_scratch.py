@@ -1,4 +1,4 @@
-"""Verificación de la CNN desde cero (NumPy). Correr: python -m pytest tests -q"""
+"""Verificación de la CNN desde cero (NumPy y CuPy). Correr: python -m pytest tests -q"""
 import sys
 from pathlib import Path
 
@@ -13,8 +13,11 @@ sys.path.insert(0, str(ROOT / "src"))
 from asl import torch_models as tm        # noqa: E402
 from scratch import numpy_cnn as nc      # noqa: E402
 
-PAIRS = [("CNN-1 Baseline", nc.cnn1, tm.cnn1), ("CNN-2 Profunda", nc.cnn2, tm.cnn2),
-         ("CNN-3 Regularizada", nc.cnn3, tm.cnn3)]
+PAIRS_NP = [
+    ("CNN-1 Baseline", nc.cnn1, tm.cnn1),
+    ("CNN-2 Profunda", nc.cnn2, tm.cnn2),
+    ("CNN-3 Regularizada", nc.cnn3, tm.cnn3)
+]
 
 
 def copy_to_mine(tmodel, mine):
@@ -37,16 +40,16 @@ def no_dropout(tmodel, mine):
         if isinstance(m, (nn.Dropout, nn.Dropout2d)):
             m.p = 0.0
     for l in mine.layers:
-        if isinstance(l, nc.Dropout):
+        if hasattr(l, "p"):
             l.p = 0.0
 
 
-@pytest.mark.parametrize("name,mk,tk", PAIRS)
+@pytest.mark.parametrize("name,mk,tk", PAIRS_NP)
 def test_params(name, mk, tk):
     assert mk().count_params() == tm.KERAS_PARAMS[name]
 
 
-@pytest.mark.parametrize("name,mk,tk", PAIRS)
+@pytest.mark.parametrize("name,mk,tk", PAIRS_NP)
 def test_vs_torch(name, mk, tk):
     torch.manual_seed(0)
     tmodel, mine = tk(), mk()
@@ -76,14 +79,13 @@ def test_vs_torch(name, mk, tk):
             pairs = [(m.grads["W"], t.weight.grad.T), (m.grads["b"], t.bias.grad)]
         else:
             pairs = [(m.grads["gamma"], t.weight.grad), (m.grads["beta"], t.bias.grad)]
-            # medias/varianzas móviles tras un paso de entrenamiento
             assert np.allclose(m.buffers["mean"], t.running_mean.numpy(), atol=1e-5)
             assert np.allclose(m.buffers["var"], t.running_var.numpy(), rtol=1e-4, atol=1e-5)
         for g, gt in pairs:
             gt = gt.numpy()
             rel = np.abs(g - gt).max() / (np.abs(gt).max() + 1e-12)
             if gt.shape == m.params.get("b", gt).shape and np.abs(gt).max() < 1e-5:
-                continue  # bias antes de BatchNorm: gradiente teóricamente 0, solo ruido
+                continue
             assert rel < 1e-3, (name, type(t).__name__, gt.shape, rel)
 
 
@@ -110,6 +112,154 @@ def test_finite_differences():
             flat[i] = old
             num = (lp - lm) / (2 * h)
             assert abs(num - gflat[i]) < 2e-2 * max(1.0, abs(num)), (p.shape, num, gflat[i])
+
+
+# ----------------------------------------------------------------------------- CuPy tests
+
+def test_cupy_available():
+    try:
+        import cupy as cp
+        from scratch import cupy_cnn as cc
+    except Exception as e:
+        pytest.skip(f"CuPy no disponible: {e}")
+    assert cp.cuda.is_available()
+
+
+def test_cupy_params():
+    try:
+        import cupy as cp
+        from scratch import cupy_cnn as cc
+    except Exception as e:
+        pytest.skip(f"CuPy no disponible: {e}")
+
+    for name, mk in [("CNN-1 Baseline", cc.cnn1), ("CNN-2 Profunda", cc.cnn2), ("CNN-3 Regularizada", cc.cnn3)]:
+        assert mk().count_params() == tm.KERAS_PARAMS[name]
+
+
+def test_cupy_vs_numpy_adam_20_steps():
+    """Verificación 3 del enunciado: mismos pesos y mismo lote, la pérdida coincide a 1e-4 durante 20 pasos de Adam."""
+    try:
+        import cupy as cp
+        from scratch import cupy_cnn as cc
+    except Exception as e:
+        pytest.skip(f"CuPy no disponible: {e}")
+
+    np_model = nc.cnn1(seed=42)
+    cp_model = cc.cnn1(seed=42)
+    no_dropout([], np_model)
+    no_dropout([], cp_model)
+
+    for (np_p, _), (cp_p, _) in zip(np_model.params(), cp_model.params()):
+        assert np.allclose(np_p, cp.asnumpy(cp_p), atol=1e-5)
+
+    opt_np = nc.Adam(np_model.params(), lr=1e-3)
+    opt_cp = cc.Adam(cp_model.params(), lr=1e-3)
+
+    rng = np.random.default_rng(123)
+    x = rng.random((32, 3, 64, 64), dtype=np.float32)
+    y = rng.integers(0, 29, 32)
+    xc = cp.asarray(x)
+    yc = cp.asarray(y)
+
+    for step in range(20):
+        loss_np = float(nc.train_step(np_model, opt_np, x, y))
+        loss_cp = float(cp.asnumpy(cc.train_step(cp_model, opt_cp, xc, yc)))
+        assert abs(loss_np - loss_cp) < 1e-4, f"Paso {step}: np={loss_np}, cp={loss_cp}"
+
+
+@pytest.mark.parametrize("name,mk,tk", [
+    ("CNN-1 Baseline", "cnn1", tm.cnn1),
+    ("CNN-2 Profunda", "cnn2", tm.cnn2),
+    ("CNN-3 Regularizada", "cnn3", tm.cnn3)
+])
+def test_cupy_vs_torch(name, mk, tk):
+    """Verificación de CuPy contra PyTorch."""
+    try:
+        import cupy as cp
+        from scratch import cupy_cnn as cc
+    except Exception as e:
+        pytest.skip(f"CuPy no disponible: {e}")
+
+    maker = getattr(cc, mk)
+    torch.manual_seed(0)
+    tmodel = tk()
+    mine = maker()
+
+    tl = [m for m in tmodel if isinstance(m, (nn.Conv2d, nn.Linear, nn.BatchNorm2d))]
+    ml = [l for l in mine.layers if l.params]
+    assert len(tl) == len(ml)
+    for t, m in zip(tl, ml):
+        if isinstance(t, nn.Conv2d):
+            m.params["W"][...] = cp.asarray(t.weight.detach().numpy())
+            m.params["b"][...] = cp.asarray(t.bias.detach().numpy())
+        elif isinstance(t, nn.Linear):
+            m.params["W"][...] = cp.asarray(t.weight.detach().numpy().T)
+            m.params["b"][...] = cp.asarray(t.bias.detach().numpy())
+        else:
+            m.params["gamma"][...] = cp.asarray(t.weight.detach().numpy())
+            m.params["beta"][...] = cp.asarray(t.bias.detach().numpy())
+
+    no_dropout(tmodel, mine)
+    tmodel.train()
+    rng = np.random.default_rng(1)
+    x = rng.random((8, 3, 64, 64), dtype=np.float32)
+    y = rng.integers(0, 29, 8)
+
+    xt = torch.from_numpy(x)
+    out_t = tmodel(xt)
+    loss_t = nn.functional.cross_entropy(out_t, torch.from_numpy(y))
+    loss_t.backward()
+
+    xc = cp.asarray(x)
+    yc = cp.asarray(y)
+    logits = mine.forward(xc, train=True)
+    loss, d = cc.softmax_cross_entropy(logits, yc)
+    mine.backward(d)
+
+    assert np.abs(cp.asnumpy(logits) - out_t.detach().numpy()).max() < 1e-4
+    assert abs(float(cp.asnumpy(loss)) - loss_t.item()) < 1e-4
+    for t, m in zip(tl, ml):
+        if isinstance(t, nn.Conv2d):
+            pairs = [(cp.asnumpy(m.grads["W"]), t.weight.grad.numpy()), (cp.asnumpy(m.grads["b"]), t.bias.grad.numpy())]
+        elif isinstance(t, nn.Linear):
+            pairs = [(cp.asnumpy(m.grads["W"]), t.weight.grad.T.numpy()), (cp.asnumpy(m.grads["b"]), t.bias.grad.numpy())]
+        else:
+            pairs = [(cp.asnumpy(m.grads["gamma"]), t.weight.grad.numpy()), (cp.asnumpy(m.grads["beta"]), t.bias.grad.numpy())]
+            assert np.allclose(cp.asnumpy(m.buffers["mean"]), t.running_mean.numpy(), atol=1e-5)
+            assert np.allclose(cp.asnumpy(m.buffers["var"]), t.running_var.numpy(), rtol=1e-4, atol=1e-5)
+        for g, gt in pairs:
+            rel = np.abs(g - gt).max() / (np.abs(gt).max() + 1e-12)
+            if gt.shape == m.params.get("b", gt).shape and np.abs(gt).max() < 1e-5:
+                continue
+            assert rel < 1e-3, (name, type(t).__name__, gt.shape, rel)
+
+
+@pytest.mark.skipif(not (ROOT / "data" / "cache" / "train_X.npy").exists(),
+                    reason="falta data/cache (correr src/scratch/cache_data.py)")
+def test_cupy_learns():
+    """CNN-1 en CuPy supera 75 % de accuracy en test tras 5 épocas (<5 s en CuPy)."""
+    try:
+        import cupy as cp
+        from scratch import cupy_cnn as cc
+    except Exception as e:
+        pytest.skip(f"CuPy no disponible: {e}")
+
+    from scratch.cache_data import load_cached
+    X, y = load_cached("train")
+    Xt, yt = load_cached("test")
+    model = cc.cnn1(42)
+    opt = cc.Adam(model.params())
+    rng = np.random.RandomState(42)
+    for _ in range(5):
+        perm = rng.permutation(len(X))
+        for i in range(0, len(X), 64):
+            idx = perm[i:i + 64]
+            xb = cp.asarray(X[idx])
+            yb = cp.asarray(y[idx])
+            cc.train_step(model, opt, xb, yb)
+    pred = cc.predict(model, Xt)
+    acc = float((pred == yt).mean())
+    assert acc > 0.75, f"Accuracy insuficiente: {acc}"
 
 
 @pytest.mark.skipif(not (ROOT / "data" / "cache" / "train_X.npy").exists(),
