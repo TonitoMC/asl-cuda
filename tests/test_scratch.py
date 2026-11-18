@@ -278,3 +278,76 @@ def test_learns():
             idx = perm[i:i + 64]
             nc.train_step(model, opt, X[idx], y[idx])
     assert (nc.predict(model, Xt) == yt).mean() > 0.75
+
+
+# ----------------------------------------------------------------------------- kernels CUDA propios
+
+def _run_both(cc, make_layer, x, dout_fn):
+    """Corre una capa con los kernels propios y con operaciones de CuPy; devuelve (y, dx) de cada una."""
+    import cupy as cp
+    out = []
+    for flag in (True, False):
+        cc.USE_KERNELS = flag
+        try:
+            layer = make_layer()
+            y = layer.forward(cp.asarray(x), True)
+            dx = layer.backward(cp.asarray(dout_fn(y.shape)))
+            out.append((cp.asnumpy(y), cp.asnumpy(dx)))
+        finally:
+            cc.USE_KERNELS = True
+    return out
+
+
+@pytest.mark.parametrize("cin,cout,k,h", [(3, 8, 3, 16), (4, 6, 5, 12), (2, 5, 3, 7)])
+def test_kernel_conv_vs_cupy_ops(cin, cout, k, h):
+    try:
+        from scratch import cupy_cnn as cc
+    except Exception as e:
+        pytest.skip(f"CuPy no disponible: {e}")
+    rng = np.random.default_rng(0)
+    x = rng.standard_normal((5, cin, h, h)).astype(np.float32)
+    g = rng.standard_normal((5, cout, h, h)).astype(np.float32)
+    (yk, dk), (yr, dr) = _run_both(cc, lambda: cc.Conv2D(cin, cout, k, np.random.default_rng(1)), x,
+                                   lambda s: g)
+    np.testing.assert_allclose(yk, yr, atol=1e-5, rtol=1e-5)
+    np.testing.assert_allclose(dk, dr, atol=1e-5, rtol=1e-5)
+
+
+@pytest.mark.parametrize("make", [lambda cc: cc.ReLU(), lambda cc: cc.MaxPool2()])
+def test_kernel_relu_maxpool_vs_cupy_ops(make):
+    try:
+        from scratch import cupy_cnn as cc
+    except Exception as e:
+        pytest.skip(f"CuPy no disponible: {e}")
+    rng = np.random.default_rng(2)
+    x = rng.standard_normal((3, 4, 10, 14)).astype(np.float32)
+    x[0, 0, :2, :2] = 1.0                       # empate dentro de una ventana 2x2: gana la primera
+    g = rng.standard_normal((3, 4, 10, 14)).astype(np.float32)
+    (yk, dk), (yr, dr) = _run_both(cc, lambda: make(cc), x,
+                                   lambda s: g if len(s) == 4 and s[2] == 10 else g[:, :, :5, :7])
+    np.testing.assert_array_equal(yk, yr)
+    np.testing.assert_array_equal(dk, dr)
+
+
+def test_kernel_adam_vs_cupy_ops():
+    try:
+        import cupy as cp
+        from scratch import cupy_cnn as cc
+    except Exception as e:
+        pytest.skip(f"CuPy no disponible: {e}")
+    rng = np.random.default_rng(3)
+    p0 = rng.standard_normal(1000).astype(np.float32)
+    grads = [rng.standard_normal(1000).astype(np.float32) for _ in range(10)]
+    res = []
+    for flag in (True, False):
+        cc.USE_KERNELS = flag
+        try:
+            p, g = cp.asarray(p0.copy()), cp.zeros(1000, dtype=cp.float32)
+            opt = cc.Adam([(p, g)])
+            for gi in grads:
+                g[...] = cp.asarray(gi)
+                opt.step()
+            res.append(cp.asnumpy(p))
+        finally:
+            cc.USE_KERNELS = True
+    np.testing.assert_allclose(res[0], res[1], atol=1e-6, rtol=1e-5)

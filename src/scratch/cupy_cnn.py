@@ -8,6 +8,12 @@ para garantizar paridad exacta de pesos y resultados con numpy_cnn.py.
 Formato NCHW, float32, padding 'same', stride 1. La convolución usa im2col: cada parche
 kxk pasa a una columna y la convolución se vuelve una multiplicación de matrices (cuBLAS).
 
+Kernels CUDA propios (cp.RawKernel, ver sección "kernels"): im2col, col2im, ReLU, MaxPool 2x2 y
+Adam. Cada uno lanza un grid 1D de bloques de 256 hilos y cada hilo calcula un elemento de la salida
+(idx = blockIdx.x * blockDim.x + threadIdx.x). La multiplicación de matrices sigue en cuBLAS
+(cp.matmul). Con ASL_CUPY_KERNELS=0 se usa la versión anterior, solo con operaciones de CuPy, que
+sirve de referencia en los tests.
+
 Interfaz común:
     Layer.forward(x, train), Layer.backward(dout), Layer.params / Layer.grads / Layer.buffers
     Model.forward / backward / params() -> lista de (arreglo, gradiente)
@@ -39,6 +45,140 @@ import numpy as np
 
 DT = cp.float32
 NUM_CLASSES = 29
+
+
+# ----------------------------------------------------------------------------- kernels
+
+USE_KERNELS = os.environ.get("ASL_CUPY_KERNELS", "1") == "1"
+BLOCK = 256   # hilos por bloque; grid = ceil(elementos / BLOCK)
+
+_SRC = r"""
+// im2col: un hilo por elemento de cols (C*K*K, N*H*W). Lee con relleno de ceros (padding 'same').
+extern "C" __global__ void im2col(const float* x, float* cols,
+                                  int N, int C, int H, int W, int K, long long total) {
+    long long idx = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= total) return;
+    long long HW = (long long)H * W, NHW = (long long)N * HW;
+    long long col = idx % NHW, row = idx / NHW;          // fila: (c, i, j); columna: (n, y, x)
+    int n = (int)(col / HW), r = (int)(col % HW);
+    int y = r / W, xx = r % W;
+    int KK = K * K, c = (int)(row / KK), ij = (int)(row % KK);
+    int sy = y + ij / K - K / 2, sx = xx + ij % K - K / 2;
+    float v = 0.0f;
+    if (sy >= 0 && sy < H && sx >= 0 && sx < W)
+        v = x[(((long long)n * C + c) * H + sy) * W + sx];
+    cols[idx] = v;
+}
+
+// col2im: un hilo por elemento de dx (N,C,H,W). Suma las K*K contribuciones que le tocan, en
+// el mismo orden que el ciclo i,j de la versión en CuPy. Al ser un "gather" no hay escrituras
+// concurrentes sobre el mismo elemento, así que no hacen falta operaciones atómicas.
+extern "C" __global__ void col2im(const float* dcols, float* dx,
+                                  int N, int C, int H, int W, int K, long long total) {
+    long long idx = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= total) return;
+    int xx = (int)(idx % W);
+    long long t = idx / W;
+    int y = (int)(t % H);
+    t /= H;
+    int c = (int)(t % C), n = (int)(t / C);
+    long long HW = (long long)H * W, NHW = (long long)N * HW;
+    int p = K / 2;
+    float acc = 0.0f;
+    for (int i = 0; i < K; i++) {
+        int oy = y - i + p;
+        if (oy < 0 || oy >= H) continue;
+        for (int j = 0; j < K; j++) {
+            int ox = xx - j + p;
+            if (ox < 0 || ox >= W) continue;
+            long long row = ((long long)c * K + i) * K + j;
+            acc += dcols[row * NHW + (long long)n * HW + (long long)oy * W + ox];
+        }
+    }
+    dx[idx] = acc;
+}
+
+extern "C" __global__ void relu_fwd(const float* x, float* out, unsigned char* mask, long long n) {
+    long long i = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= n) return;
+    float v = x[i];
+    unsigned char m = v > 0.0f;
+    mask[i] = m;
+    out[i] = m ? v : 0.0f;
+}
+
+extern "C" __global__ void relu_bwd(const float* dout, const unsigned char* mask, float* dx, long long n) {
+    long long i = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= n) return;
+    dx[i] = mask[i] ? dout[i] : 0.0f;
+}
+
+// MaxPool 2x2: un hilo por pixel de salida. Guarda cuál de las 4 posiciones (fila*2+columna)
+// ganó; en empate gana la primera (comparación estricta), como PyTorch.
+extern "C" __global__ void maxpool_fwd(const float* x, float* out, unsigned char* arg,
+                                       int H, int W, long long total) {
+    long long idx = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= total) return;
+    int H2 = H / 2, W2 = W / 2;
+    int ox = (int)(idx % W2);
+    long long t = idx / W2;
+    int oy = (int)(t % H2);
+    long long nc = t / H2;
+    const float* base = x + (nc * H + 2 * oy) * W + 2 * ox;
+    float best = base[0];
+    unsigned char bi = 0;
+    if (base[1] > best)     { best = base[1];     bi = 1; }
+    if (base[W] > best)     { best = base[W];     bi = 2; }
+    if (base[W + 1] > best) { best = base[W + 1]; bi = 3; }
+    out[idx] = best;
+    arg[idx] = bi;
+}
+
+// Backward: un hilo por pixel de entrada; recibe el gradiente solo si fue el máximo de su ventana.
+extern "C" __global__ void maxpool_bwd(const float* dout, const unsigned char* arg, float* dx,
+                                       int H, int W, long long total) {
+    long long idx = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= total) return;
+    int xx = (int)(idx % W);
+    long long t = idx / W;
+    int y = (int)(t % H);
+    long long nc = t / H;
+    int H2 = H / 2, W2 = W / 2;
+    long long o = (nc * H2 + y / 2) * W2 + xx / 2;
+    dx[idx] = (arg[o] == (unsigned char)((y & 1) * 2 + (xx & 1))) ? dout[o] : 0.0f;
+}
+
+// Adam fusionado: un hilo por parámetro actualiza m, v y p en una sola pasada por memoria.
+extern "C" __global__ void adam_step(float* p, const float* g, float* m, float* v,
+                                     float b1, float b2, float lr_t, float inv_sqrt_bc2,
+                                     float eps, long long n) {
+    long long i = (long long)blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= n) return;
+    float gi = g[i];
+    float mi = b1 * m[i] + (1.0f - b1) * gi;
+    float vi = b2 * v[i] + (1.0f - b2) * gi * gi;
+    m[i] = mi;
+    v[i] = vi;
+    p[i] -= lr_t * mi / (sqrtf(vi) * inv_sqrt_bc2 + eps);
+}
+"""
+
+_mod = None
+
+
+def _k(name):
+    # Compilación perezosa con NVRTC (la primera vez que se pide un kernel)
+    global _mod
+    if _mod is None:
+        _mod = cp.RawModule(code=_SRC)
+    return _mod.get_function(name)
+
+
+def _launch(name, total, *args):
+    """Grid 1D: ceil(total / BLOCK) bloques de BLOCK hilos, un hilo por elemento."""
+    grid = (int((total + BLOCK - 1) // BLOCK),)
+    _k(name)(grid, (BLOCK,), args)
+
 
 
 # ----------------------------------------------------------------------------- capas
@@ -80,6 +220,12 @@ class Conv2D(Layer):
     def _im2col(self, x):
         n, c, h, w = x.shape
         k, p = self.k, self.k // 2
+        if USE_KERNELS:
+            x = cp.ascontiguousarray(x, dtype=DT)
+            cols = cp.empty((c * k * k, n * h * w), dtype=DT)
+            _launch("im2col", cols.size, x, cols, np.int32(n), np.int32(c), np.int32(h),
+                    np.int32(w), np.int32(k), np.int64(cols.size))
+            return cols
         xp = cp.pad(x, ((0, 0), (0, 0), (p, p), (p, p)))
         cols = cp.empty((c, k * k, n, h, w), dtype=DT)
         for i in range(k):
@@ -101,6 +247,13 @@ class Conv2D(Layer):
         d = cp.ascontiguousarray(dout.transpose(1, 0, 2, 3)).reshape(self.cout, -1)
         self.grads["W"][...] = (d @ self.cols.T).reshape(self.params["W"].shape)
         self.grads["b"][...] = d.sum(axis=1)
+        if USE_KERNELS:
+            dcols = cp.ascontiguousarray(self.params["W"].reshape(self.cout, -1).T @ d)
+            dx = cp.empty((n, c, h, w), dtype=DT)
+            _launch("col2im", dx.size, dcols, dx, np.int32(n), np.int32(c), np.int32(h),
+                    np.int32(w), np.int32(k), np.int64(dx.size))
+            self.cols = None
+            return dx
         dcols = (self.params["W"].reshape(self.cout, -1).T @ d).reshape(c, k * k, n, h, w)
         dxp = cp.zeros((n, c, h + 2 * p, w + 2 * p), dtype=DT)
         for i in range(k):
@@ -112,10 +265,21 @@ class Conv2D(Layer):
 
 class ReLU(Layer):
     def forward(self, x, train):
+        if USE_KERNELS:
+            x = cp.ascontiguousarray(x, dtype=DT)
+            out = cp.empty_like(x)
+            self.mask = cp.empty(x.shape, dtype=cp.uint8)
+            _launch("relu_fwd", x.size, x, out, self.mask, np.int64(x.size))
+            return out
         self.mask = x > 0
         return x * self.mask
 
     def backward(self, dout):
+        if USE_KERNELS:
+            dout = cp.ascontiguousarray(dout, dtype=DT)
+            dx = cp.empty_like(dout)
+            _launch("relu_bwd", dout.size, dout, self.mask, dx, np.int64(dout.size))
+            return dx
         return dout * self.mask
 
 
@@ -124,6 +288,14 @@ class MaxPool2(Layer):
 
     def forward(self, x, train):
         n, c, h, w = x.shape
+        if USE_KERNELS:
+            x = cp.ascontiguousarray(x, dtype=DT)
+            out = cp.empty((n, c, h // 2, w // 2), dtype=DT)
+            self.arg = cp.empty(out.shape, dtype=cp.uint8)
+            self.shape = x.shape
+            _launch("maxpool_fwd", out.size, x, out, self.arg, np.int32(h), np.int32(w),
+                    np.int64(out.size))
+            return out
         win = x.reshape(n, c, h // 2, 2, w // 2, 2).transpose(0, 1, 2, 4, 3, 5)
         win = win.reshape(n, c, h // 2, w // 2, 4)
         self.idx = win.argmax(axis=-1)
@@ -132,6 +304,12 @@ class MaxPool2(Layer):
 
     def backward(self, dout):
         n, c, h, w = self.shape
+        if USE_KERNELS:
+            dout = cp.ascontiguousarray(dout, dtype=DT)
+            dx = cp.empty(self.shape, dtype=DT)
+            _launch("maxpool_bwd", dx.size, dout, self.arg, dx, np.int32(h), np.int32(w),
+                    np.int64(dx.size))
+            return dx
         dwin = cp.zeros((n, c, h // 2, w // 2, 4), dtype=DT)
         cp.put_along_axis(dwin, self.idx[..., None], dout[..., None], axis=-1)
         dx = dwin.reshape(n, c, h // 2, w // 2, 2, 2).transpose(0, 1, 2, 4, 3, 5)
@@ -284,6 +462,11 @@ class Adam:
         bc1 = 1 - self.b1 ** self.t
         bc2 = 1 - self.b2 ** self.t
         for (p, g), m, v in zip(self.params, self.m, self.v):
+            if USE_KERNELS:
+                _launch("adam_step", p.size, p, g, m, v, np.float32(self.b1), np.float32(self.b2),
+                        np.float32(self.lr / bc1), np.float32(1.0 / np.sqrt(bc2)),
+                        np.float32(self.eps), np.int64(p.size))
+                continue
             m *= self.b1
             m += (1 - self.b1) * g
             v *= self.b2
