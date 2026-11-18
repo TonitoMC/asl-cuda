@@ -18,3 +18,8 @@ streamlit run demo/app.py
 `demo/muestras_dataset.png` tiene una imagen por clase. El dataset completo (ASL Alphabet de Kaggle) queda en
 `~/.cache/kagglehub/datasets/grassknoted/asl-alphabet/versions/1/asl_alphabet_train/asl_alphabet_train/<clase>/`
 (una carpeta por clase, 500 imágenes de 200x200 de las que se usan en los splits de `data/splits/`).
+
+## Por qué falla en vivo
+El test (1,450 imágenes) sale del mismo dataset que el entrenamiento: frames de videos de una persona con el mismo fondo, y el split
+es aleatorio, así que cada imagen de test tiene frames casi idénticos en train. El 99.59 % mide eso, no generalización a otra cámara,
+persona o fondo.

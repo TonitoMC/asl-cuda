@@ -1633,7 +1633,7 @@ central, lo pasa a 64x64 igual que en el entrenamiento y muestra el top 3, el ti
 de 30. Se puede cambiar entre \texttt{cuda} y \texttt{cpu} para comparar. Los pesos están en
 \texttt{demo/weights/cnn2.pt} (se regeneran con \texttt{demo/train\_demo.py}, unos 45 s en la RTX 4070 SUPER).
 Con la cámara de la máquina de pruebas (MJPG, poca luz) se leyeron 14 fps; el modelo se entrenó con fotos del dataset,
-así que con una cámara normal la exactitud es menor que la de test.
+así que con una cámara normal acierta bastante menos que en el test (ver limitaciones en la sección 7).
 
 \clearpage
 \section{7. Cumplimiento de la rúbrica}\label{verificacion-rubrica}
@@ -1662,6 +1662,7 @@ Criterio del enunciado & Evidencia & Dónde \\
 \begin{itemize}
 \tightlist
 \item PyTorch CPU tiene 1 corrida; NumPy solo se midió en CNN-1; el batch es siempre 64.
+\item La exactitud de 99 \% se mide sobre un test de 1,450 imágenes tomado al azar del mismo dataset. El dataset son frames de videos de una sola persona y un solo fondo, así que cada imagen de test tiene frames casi idénticos en train (el split es aleatorio, no por persona). Esa cifra mide qué tan bien reconoce imágenes parecidas a las de entrenamiento y no generaliza a otra cámara, otra persona o otro fondo; por eso el demo en vivo (6.6) falla más. No afecta a los speedups, que miden tiempo.
 \item El entrenamiento completo (5.4) es una sola corrida (sin repeticiones) y sus tiempos incluyen validación por época; no son comparables con los de 5.1.
 \item Los tiempos de CuPy y PyTorch no incluyen la fase de datos, que se mide aparte (5.3b).
 \item Una de las 21 pruebas de \texttt{tests/test\_scratch.py} (gradiente de la primera convolución de
