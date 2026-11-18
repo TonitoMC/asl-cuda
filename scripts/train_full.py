@@ -58,7 +58,7 @@ def evaluate_split(model, X, y, device, batch_size=256):
     return acc, macro_f1, avg_loss
 
 
-def train_model(name, model_fn, X_tr, y_tr, X_val, y_val, X_te, y_te, device):
+def train_model(name, model_fn, X_tr, y_tr, X_val, y_val, X_te, y_te, device, save_path=None):
     torch.manual_seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
 
@@ -127,6 +127,10 @@ def train_model(name, model_fn, X_tr, y_tr, X_val, y_val, X_te, y_te, device):
     # Restaurar mejores pesos
     if best_weights is not None:
         model.load_state_dict(best_weights)
+    if save_path is not None:
+        Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+        torch.save(model.state_dict(), save_path)       # pesos del mejor val_acc, para el demo
+        print(f"  Pesos guardados en {save_path}")
 
     test_acc, test_f1, test_loss = evaluate_split(model, X_te, y_te, device)
     print(f"\nResultado final {name}:")

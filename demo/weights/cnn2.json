@@ -1,0 +1,6 @@
+{
+  "modelo": "CNN-2 Profunda",
+  "test_accuracy": 0.9959,
+  "test_f1_macro": 0.9959,
+  "epocas": 25
+}

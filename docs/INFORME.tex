@@ -193,11 +193,11 @@ Señas Americano (ASL Alphabet, 14,500 imágenes 64x64x3).
 Partiendo de la implementación secuencial en CPU del
 Laboratorio 3 de Data Science, se aplicó un rediseño
 arquitectónico paralelo cumpliendo rigurosamente la
-directriz de la cátedra: \textbf{la preparación y
+directriz de la cátedra: la preparación y
 decodificación de datos se ejecuta exclusivamente en CPU
 multinúcleo, reservando la GPU para la matemática tensorial
-intensiva (propagación hacia adelante, retropropagación y
-optimización de parámetros)}.
+intensiva (forward pass, backprop y
+optimización de parámetros).
 
 Se implementaron y compararon seis entornos de ejecución
 sobre los mismos datos y particiones:
@@ -227,11 +227,11 @@ sobre los mismos datos y particiones:
   de alto rendimiento.
 \end{enumerate}
 
-Los resultados experimentales demuestran un \textbf{speedup
-de hasta 14.9x en PyTorch CUDA frente a Keras CPU}, un
-\textbf{speedup de hasta 24.4x frente a PyTorch CPU}, y, en
+Los resultados experimentales demuestran un speedup
+de hasta 14.9x en PyTorch CUDA frente a Keras CPU, un
+speedup de hasta 24.4x frente a PyTorch CPU, y, en
 la comparación desde cero con el mismo algoritmo,
-\textbf{58.9x de CuPy frente a NumPy} (\textbf{92.9x} con
+58.9x de CuPy frente a NumPy (92.9x con
 kernels CUDA propios). Los kernels propios aceleran la época
 1.58x en CNN-1 pero solo 1.11x a 1.12x en CNN-2 y CNN-3,
 donde domina la multiplicación de matrices en cuBLAS;
@@ -242,8 +242,8 @@ y transferencia H2D, 0.081 s por época en CNN-3) es solo el
 0.36 \% del tiempo secuencial, así que el speedup no lo
 limita la parte serial sino la aceleración efectiva de la
 GPU sobre la parte paralela (15.7x). Los modelos entrenados
-en GPU convergieron con Early Stopping a \textbf{99.59 \% de
-exactitud en CNN-2} y \textbf{99.31 \% en CNN-3}.
+en GPU convergieron con Early Stopping a 99.59 \% de
+exactitud en CNN-2 y 99.31 \% en CNN-3.
 
 \clearpage
 \section*{Evidencia de Ejecución: CPU en la fase de datos, GPU en el entrenamiento}
@@ -267,7 +267,7 @@ agregaron encima de la captura original (sin tocar los números); los textos ori
 \end{tabular}
 \end{center}
 
-\textbf{Qué demuestran:} (1) mientras se leen y decodifican las imágenes la GPU está prácticamente ociosa
+\textbf{Qué demuestran:} (1) mientras se leen y decodifican las imágenes la GPU casi no se usa
 y trabaja la CPU con todos sus hilos; (2) cuando empieza el entrenamiento la GPU salta a 96 \% y aparece un
 proceso de cómputo CUDA en ella. Es decir, la preparación de archivos corre en CPU y la matemática de la red en GPU.
 
@@ -349,18 +349,18 @@ Baja \\
 6 & Batching y Shuffle & Conformación de tensores de lote de
 dimensión \((64, 64, 64, 3)\) & CPU & Baja (Indexado en
 RAM) \\
-7 & \textbf{Forward de la Red} & Convolución 2D, activación
-ReLU, MaxPool, BatchNorm, FC & \textbf{GPU (Candidata)} &
-\textbf{Extremadamente Alta} \\
-8 & \textbf{Cálculo de Pérdida} & Softmax y Categorical
-Cross-Entropy sobre 29 logits & \textbf{GPU (Candidata)} &
-\textbf{Alta} \\
-9 & \textbf{Backward (Gradientes)} & Regla de la cadena
-retropropagada en todas las capas & \textbf{GPU (Candidata)}
-& \textbf{Extremadamente Alta} \\
-10 & \textbf{Optimizador (Adam)} & Cálculo de momentos
-\(m_t\), \(v_t\) y actualización de pesos & \textbf{GPU
-(Candidata)} & \textbf{Alta} \\
+7 & Forward pass de la red & Convolución 2D, activación
+ReLU, MaxPool, BatchNorm, FC & GPU (Candidata) &
+Extremadamente Alta \\
+8 & Cálculo de Pérdida & Softmax y Categorical
+Cross-Entropy sobre 29 logits & GPU (Candidata) &
+Alta \\
+9 & Backprop (gradientes) & Regla de la cadena
+aplicada hacia atrás en todas las capas & GPU (Candidata)
+& Extremadamente Alta \\
+10 & Optimizador (Adam) & Cálculo de momentos
+\(m_t\), \(v_t\) y actualización de pesos & GPU
+(Candidata) & Alta \\
 11 & Control de Época & Evaluación en validación, Early
 Stopping, ReduceLROnPlateau & CPU / GPU & Media \\
 12 & Evaluación Final & Inferencia en prueba, cálculo de
@@ -396,9 +396,9 @@ Repeticiones Totales (25 Épocas)
 Decodificación y normalización JPEG & 1 archivo imagen
 (\textasciitilde10-30 KB) & 11,600 (única si hay caché) &
 11,600 \\
-Convolución 2D (Forward) & Tensor \((64, H, W, C_{in})\) &
+Convolución 2D (forward pass) & Tensor \((64, H, W, C_{in})\) &
 \(182 \times (\text{capas})\) & 9,100 a 18,200 \\
-Convolución 2D (Backward) & Tensor de gradientes de
+Convolución 2D (backprop) & Tensor de gradientes de
 activación & \(182 \times (\text{capas})\) & 9,100 a
 18,200 \\
 Actualización Adam & Todos los tensores de pesos y sesgos &
@@ -449,18 +449,18 @@ Total MACs / imagen
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\textbf{CNN-1 Baseline} & 2 Conv (32, 64) + Flatten +
-Dense(64) + Dense(29) & \textbf{4,221,405} &
+CNN-1 Baseline & 2 Conv (32, 64) + Flatten +
+Dense(64) + Dense(29) & 4,221,405 &
 \textasciitilde22 M & \textasciitilde4.2 M &
-\textbf{\textasciitilde26.2 M} \\
-\textbf{CNN-2 Profunda} & 4 Conv (32, 64, 128, 128) + GAP +
-Dense(64) + Dense(29) & \textbf{519,069} &
+\textasciitilde26.2 M \\
+CNN-2 Profunda & 4 Conv (32, 64, 128, 128) + GAP +
+Dense(64) + Dense(29) & 519,069 &
 \textasciitilde158 M & \textasciitilde0.15 M &
-\textbf{\textasciitilde158.2 M} \\
-\textbf{CNN-3 Regularizada} & 4 Conv + BatchNorm + Dropout +
-GAP + Dense + Dense & \textbf{448,925} & \textasciitilde171
-M & \textasciitilde0.07 M & \textbf{\textasciitilde171.1
-M} \\
+\textasciitilde158.2 M \\
+CNN-3 Regularizada & 4 Conv + BatchNorm + Dropout +
+GAP + Dense + Dense & 448,925 & \textasciitilde171
+M & \textasciitilde0.07 M & \textasciitilde171.1
+M \\
 \end{longtable}
 
 \begin{quote}
@@ -468,12 +468,12 @@ M} \\
 \end{quote}
 
 \begin{quote}
-A pesar de que \textbf{CNN-1 tiene 8 veces más parámetros}
+A pesar de que CNN-1 tiene 8 veces más parámetros
 que CNN-2 y CNN-3 (debido a la capa de aplanado
 \texttt{Flatten} hacia la capa densa con 4 millones de
-conexiones), \textbf{CNN-2 y CNN-3 requieren
+conexiones), CNN-2 y CNN-3 requieren
 \textasciitilde7 veces más operaciones aritméticas (MACs)
-por imagen} debido a la profundidad de los mapas de
+por imagen debido a la profundidad de los mapas de
 características convolucionales. Esto explica con total
 claridad por qué en la CPU secuencial CNN-2 y CNN-3 tardan
 \textasciitilde22 segundos por época frente a los
@@ -563,13 +563,13 @@ Preparación de Datos (s)
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\textbf{Keras CPU (Línea Base)} & \(4.085 \pm 0.063\) s &
+Keras CPU (Línea Base) & \(4.085 \pm 0.063\) s &
 \(21.628 \pm 0.267\) s & \(22.496 \pm 0.342\) s &
 \(0.440 \pm 0.010\) s \\
-\textbf{PyTorch CPU} & \(9.583 \pm 1.110\) s &
+PyTorch CPU & \(9.583 \pm 1.110\) s &
 \(36.168 \pm 1.256\) s & \(34.106 \pm 0.078\) s &
 \(0.828 \pm 0.000\) s \\
-\textbf{NumPy CPU (Desde Cero)} & \(64.123 \pm 7.809\) s &
+NumPy CPU (Desde Cero) & \(64.123 \pm 7.809\) s &
 \emph{(no medido, est. ≈ 280 a 350 s)} & \emph{(no medido,
 est. ≈ 290 a 350 s)} & \(0.050\) s (RAM) \\
 \end{longtable}
@@ -615,9 +615,9 @@ Roles}\label{justificaciuxf3n-teuxf3rica-de-la-separaciuxf3n-de-roles}
 El enunciado del proyecto exige de forma taxativa:
 
 \begin{quote}
-\textbf{``Los archivos/imágenes se preparan en la CPU
+``Los archivos/imágenes se preparan en la CPU
 (varios núcleos) y la GPU se usa solo para la matemática de
-la red.''}
+la red.''
 \end{quote}
 
 La arquitectura de computación heterogénea CPU-GPU dicta
@@ -663,8 +663,8 @@ esta división por principios físicos y algorítmicos:
   \item
     Las operaciones de convolución, multiplicación matricial
     (GEMM), activación ReLU y normalización por lotes son
-    \textbf{``vergonzosamente paralelas'' (embarrassingly
-    parallel)}: cada píxel del mapa de salida o cada neurona
+    ``vergonzosamente paralelas'' (embarrassingly
+    parallel): cada píxel del mapa de salida o cada neurona
     puede computarse de manera independiente.
   \item
     La GPU cuenta con miles de núcleos aritméticos y un
@@ -683,9 +683,9 @@ esta división por principios físicos y algorítmicos:
 \node[box=gray!12, right=of d3] (d4) {Lotes\\(64 im\'agenes)};
 \node[box=gray!12, right=of d4] (d5) {Memoria\\paginable};
 \node[box=green!15, below=14mm of d5] (g1) {VRAM de la GPU};
-\node[box=green!15, left=of g1] (g2) {Forward:\\Conv + Act + Pool};
+\node[box=green!15, left=of g1] (g2) {Forward pass:\\Conv + Act + Pool};
 \node[box=green!15, left=of g2] (g3) {Softmax +\\entrop\'ia cruzada};
-\node[box=green!15, left=of g3] (g4) {Backward:\\gradientes};
+\node[box=green!15, left=of g3] (g4) {Backprop:\\gradientes};
 \node[box=green!15, left=of g4] (g5) {Adam:\\actualizaci\'on};
 \foreach \a/\b in {d1/d2,d2/d3,d3/d4,d4/d5,g1/g2,g2/g3,g3/g4,g4/g5} \draw[arr] (\a) -- (\b);
 \draw[arr] (d5) -- node[right, font=\scriptsize, align=left] {H2D por PCIe 4.0 x16\\$\sim$0.044 s por \'epoca} (g1);
@@ -725,8 +725,8 @@ Speedup CPU
 \endlastfoot
 1 Worker (Secuencial en 1 núcleo) & 3.35 s & 3,462 img/s &
 1.00x \\
-\textbf{20 Workers (Todos los hilos lógicos)} & \textbf{0.57
-s} & \textbf{20,350 img/s} & \textbf{5.88x} \\
+20 Workers (Todos los hilos lógicos) & 0.57
+s & 20,350 img/s & 5.88x \\
 \end{longtable}
 
 El pipeline de preparación multinúcleo en CPU es capaz de
@@ -810,8 +810,8 @@ algoritmo estándar \texttt{im2col} adaptado a CUDA:
   con relleno de ceros (padding \texttt{same}) \\
   \texttt{col2im} & un elemento de \(dX\) & es un
   \emph{gather}: suma las \(K \cdot K\) contribuciones que
-  le corresponden, de modo que \textbf{no hay escrituras
-  concurrentes y no se necesitan operaciones atómicas} \\
+  le corresponden, de modo que no hay escrituras
+  concurrentes y no se necesitan operaciones atómicas \\
   \texttt{relu\_fwd} / \texttt{relu\_bwd} & un elemento &
   guarda la máscara en \texttt{uint8} (4x menos memoria que
   \texttt{float32}) \\
@@ -819,7 +819,7 @@ algoritmo estándar \texttt{im2col} adaptado a CUDA:
   de salida / de entrada & guarda cuál de las 4 posiciones
   ganó; en empate gana la primera, igual que PyTorch \\
   \texttt{adam\_step} & un parámetro & actualiza \(m\),
-  \(v\) y \(p\) en \textbf{una sola pasada} por memoria (en
+  \(v\) y \(p\) en una sola pasada por memoria (en
   CuPy puro son \textasciitilde10 kernels por tensor) \\
   \end{longtable}
 
@@ -912,23 +912,23 @@ CNN-3 Regularizada (s/ép)
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\textbf{Keras CPU (Línea Base)} & CPU (20 hilos) &
+Keras CPU (Línea Base) & CPU (20 hilos) &
 \(4.085 \pm 0.063\) s & \(21.628 \pm 0.267\) s &
 \(22.496 \pm 0.342\) s \\
-\textbf{PyTorch CPU} & CPU (20 hilos) & \(9.583 \pm 1.110\)
+PyTorch CPU & CPU (20 hilos) & \(9.583 \pm 1.110\)
 s & \(36.168 \pm 1.256\) s & \(34.106 \pm 0.078\) s \\
-\textbf{NumPy CPU (Desde Cero)} & CPU (BLAS multihilo) &
+NumPy CPU (Desde Cero) & CPU (BLAS multihilo) &
 \(64.123 \pm 7.809\) s & \emph{(no medido)} & \emph{(no
 medido)} \\
-\textbf{CuPy GPU (Desde Cero)} & NVIDIA RTX 4070 SUPER &
+CuPy GPU (Desde Cero) & NVIDIA RTX 4070 SUPER &
 \(1.088 \pm 0.033\) s & \(4.755 \pm 0.191\) s &
 \(4.925 \pm 0.163\) s \\
-\textbf{CuPy GPU + kernels CUDA propios} & NVIDIA RTX 4070
+CuPy GPU + kernels CUDA propios & NVIDIA RTX 4070
 SUPER & \(0.691 \pm 0.028\) s & \(4.230 \pm 0.170\) s &
 \(4.422 \pm 0.130\) s \\
-\textbf{PyTorch CUDA (cuDNN)} & NVIDIA RTX 4070 SUPER &
-\textbf{\(0.425 \pm 0.014\) s} & \textbf{\(1.485 \pm 0.008\)
-s} & \textbf{\(1.510 \pm 0.012\) s} \\
+PyTorch CUDA (cuDNN) & NVIDIA RTX 4070 SUPER &
+\(0.425 \pm 0.014\) s & \(1.485 \pm 0.008\)
+s & \(1.510 \pm 0.012\) s \\
 \end{longtable}
 
 \subsection{5.2 Análisis de Speedup
@@ -958,27 +958,27 @@ Métrica de Speedup en CNN-3
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\textbf{PyTorch CUDA vs Keras CPU (Línea Base Principal)} &
-\textbf{9.60x} & \textbf{14.57x} & \textbf{14.90x} \\
-\textbf{PyTorch CUDA vs PyTorch CPU (Comparación Justa
-Framework)} & \textbf{22.53x} & \textbf{24.36x} &
-\textbf{22.59x} \\
-\textbf{CuPy GPU vs NumPy CPU (Comparación Pura Desde Cero)}
-& \textbf{58.9x} & \emph{(no medido, est. ≈ 60x a 70x)} &
+PyTorch CUDA vs Keras CPU (Línea Base Principal) &
+9.60x & 14.57x & 14.90x \\
+PyTorch CUDA vs PyTorch CPU (Comparación Justa
+Framework) & 22.53x & 24.36x &
+22.59x \\
+CuPy GPU vs NumPy CPU (Comparación Pura Desde Cero)
+& 58.9x & \emph{(no medido, est. ≈ 60x a 70x)} &
 \emph{(no medido, est. ≈ 60x a 70x)} \\
-\textbf{CuPy + kernels propios vs NumPy CPU} &
-\textbf{92.9x} & \emph{(no medido)} & \emph{(no medido)} \\
-\textbf{CuPy + kernels propios vs CuPy sin kernels} &
-\textbf{1.58x} & \textbf{1.12x} & \textbf{1.11x} \\
-\textbf{CuPy GPU vs Keras CPU} & \textbf{3.75x} &
-\textbf{4.55x} & \textbf{4.57x} \\
-\textbf{CuPy + kernels propios vs Keras CPU} &
-\textbf{5.92x} & \textbf{5.11x} & \textbf{5.09x} \\
-\textbf{PyTorch CUDA vs CuPy + kernels propios} &
-\textbf{1.6x} & \textbf{2.8x} & \textbf{2.9x} \\
+CuPy + kernels propios vs NumPy CPU &
+92.9x & \emph{(no medido)} & \emph{(no medido)} \\
+CuPy + kernels propios vs CuPy sin kernels &
+1.58x & 1.12x & 1.11x \\
+CuPy GPU vs Keras CPU & 3.75x &
+4.55x & 4.57x \\
+CuPy + kernels propios vs Keras CPU &
+5.92x & 5.11x & 5.09x \\
+PyTorch CUDA vs CuPy + kernels propios &
+1.6x & 2.8x & 2.9x \\
 \end{longtable}
 
-\textbf{Matriz completa de comparaciones}
+Matriz completa de comparaciones
 (\texttt{speedup\_matrix.md}, generada por
 \texttt{aggregate.py}). Cada celda es
 \(T_{\text{fila}} / T_{\text{columna}}\): cuántas veces es
@@ -1019,17 +1019,17 @@ PyTorch CUDA
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\textbf{Keras CPU} (4.085) & - & 0.43x & 0.06x & 3.75x &
+Keras CPU (4.085) & - & 0.43x & 0.06x & 3.75x &
 5.92x & 9.60x \\
-\textbf{PyTorch CPU} (9.583) & 2.35x & - & 0.15x & 8.81x &
+PyTorch CPU (9.583) & 2.35x & - & 0.15x & 8.81x &
 13.88x & 22.53x \\
-\textbf{NumPy} (64.123) & 15.70x & 6.69x & - & 58.94x &
+NumPy (64.123) & 15.70x & 6.69x & - & 58.94x &
 92.87x & 150.73x \\
-\textbf{CuPy} (1.088) & 0.27x & 0.11x & 0.02x & - & 1.58x &
+CuPy (1.088) & 0.27x & 0.11x & 0.02x & - & 1.58x &
 2.56x \\
-\textbf{CuPy+kernels} (0.691) & 0.17x & 0.07x & 0.01x &
+CuPy+kernels (0.691) & 0.17x & 0.07x & 0.01x &
 0.63x & - & 1.62x \\
-\textbf{PyTorch CUDA} (0.425) & 0.10x & 0.04x & 0.01x &
+PyTorch CUDA (0.425) & 0.10x & 0.04x & 0.01x &
 0.39x & 0.62x & - \\
 \end{longtable}
 
@@ -1063,14 +1063,14 @@ PyTorch CUDA
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\textbf{Keras CPU} (21.628) & - & 0.60x & 4.55x & 5.11x &
+Keras CPU (21.628) & - & 0.60x & 4.55x & 5.11x &
 14.57x \\
-\textbf{PyTorch CPU} (36.168) & 1.67x & - & 7.61x & 8.55x &
+PyTorch CPU (36.168) & 1.67x & - & 7.61x & 8.55x &
 24.36x \\
-\textbf{CuPy} (4.755) & 0.22x & 0.13x & - & 1.12x & 3.20x \\
-\textbf{CuPy+kernels} (4.230) & 0.20x & 0.12x & 0.89x & - &
+CuPy (4.755) & 0.22x & 0.13x & - & 1.12x & 3.20x \\
+CuPy+kernels (4.230) & 0.20x & 0.12x & 0.89x & - &
 2.85x \\
-\textbf{PyTorch CUDA} (1.485) & 0.07x & 0.04x & 0.31x &
+PyTorch CUDA (1.485) & 0.07x & 0.04x & 0.31x &
 0.35x & - \\
 \end{longtable}
 
@@ -1104,14 +1104,14 @@ PyTorch CUDA
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\textbf{Keras CPU} (22.496) & - & 0.66x & 4.57x & 5.09x &
+Keras CPU (22.496) & - & 0.66x & 4.57x & 5.09x &
 14.90x \\
-\textbf{PyTorch CPU} (34.106) & 1.52x & - & 6.93x & 7.71x &
+PyTorch CPU (34.106) & 1.52x & - & 6.93x & 7.71x &
 22.59x \\
-\textbf{CuPy} (4.925) & 0.22x & 0.14x & - & 1.11x & 3.26x \\
-\textbf{CuPy+kernels} (4.422) & 0.20x & 0.13x & 0.90x & - &
+CuPy (4.925) & 0.22x & 0.14x & - & 1.11x & 3.26x \\
+CuPy+kernels (4.422) & 0.20x & 0.13x & 0.90x & - &
 2.93x \\
-\textbf{PyTorch CUDA} (1.510) & 0.07x & 0.04x & 0.31x &
+PyTorch CUDA (1.510) & 0.07x & 0.04x & 0.31x &
 0.34x & - \\
 \end{longtable}
 
@@ -1155,12 +1155,12 @@ Tiempo Total (s/época)
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\textbf{CNN-1 Baseline} & \(0.016\) s & \(0.044 \pm 0.004\)
-s & \(0.377\) s & \textbf{\(0.425\) s} & 10.4\% \\
-\textbf{CNN-2 Profunda} & \(0.037\) s & \(0.051 \pm 0.004\)
-s & \(1.427\) s & \textbf{\(1.485\) s} & 3.4\% \\
-\textbf{CNN-3 Regularizada} & \(0.037\) s &
-\(0.044 \pm 0.007\) s & \(1.461\) s & \textbf{\(1.510\) s} &
+CNN-1 Baseline & \(0.016\) s & \(0.044 \pm 0.004\)
+s & \(0.377\) s & \(0.425\) s & 10.4\% \\
+CNN-2 Profunda & \(0.037\) s & \(0.051 \pm 0.004\)
+s & \(1.427\) s & \(1.485\) s & 3.4\% \\
+CNN-3 Regularizada & \(0.037\) s &
+\(0.044 \pm 0.007\) s & \(1.461\) s & \(1.510\) s &
 2.9\% \\
 \end{longtable}
 
@@ -1182,12 +1182,12 @@ Fase & Secuencial & Paralelo & Speedup \\
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\textbf{A. Datos} (leer + decodificar + resize, 11,600 JPEG), CPU & 3.35 s (1 worker) & 0.57 s (20 workers) & \textbf{5.9x} \\
-\textbf{B. Cómputo de la red}, CNN-1 (fwd + bwd + Adam) & 9.55 s (PyTorch CPU) & 0.377 s (CUDA) & \textbf{25.3x} \\
-\textbf{B. Cómputo de la red}, CNN-2 & 36.14 s (PyTorch CPU) & 1.427 s (CUDA) & \textbf{25.3x} \\
-\textbf{B. Cómputo de la red}, CNN-3 & 34.08 s (PyTorch CPU) & 1.461 s (CUDA) & \textbf{23.3x} \\
-\textbf{C. Transferencia H2D} (costo añadido, solo existe en GPU) & 0.001 s (CPU, sin copia) & 0.044 a 0.051 s & no aplica \\
-\textbf{Época completa} CNN-1 / CNN-2 / CNN-3 vs. Keras CPU & 4.085 / 21.628 / 22.496 s & 0.425 / 1.485 / 1.510 s & \textbf{9.6x / 14.6x / 14.9x} \\
+A. Datos (leer + decodificar + resize, 11,600 JPEG), CPU & 3.35 s (1 worker) & 0.57 s (20 workers) & 5.9x \\
+B. Cómputo de la red, CNN-1 (fwd + bwd + Adam) & 9.55 s (PyTorch CPU) & 0.377 s (CUDA) & 25.3x \\
+B. Cómputo de la red, CNN-2 & 36.14 s (PyTorch CPU) & 1.427 s (CUDA) & 25.3x \\
+B. Cómputo de la red, CNN-3 & 34.08 s (PyTorch CPU) & 1.461 s (CUDA) & 23.3x \\
+C. Transferencia H2D (costo añadido, solo existe en GPU) & 0.001 s (CPU, sin copia) & 0.044 a 0.051 s & no aplica \\
+Época completa CNN-1 / CNN-2 / CNN-3 vs. Keras CPU & 4.085 / 21.628 / 22.496 s & 0.425 / 1.485 / 1.510 s & 9.6x / 14.6x / 14.9x \\
 \end{longtable}
 
 Lectura: la fase de datos solo escala 5.9x con 20 hilos (la decodificación JPEG no escala
@@ -1231,12 +1231,12 @@ Test Macro F1
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\textbf{CNN-1 Baseline} & 20 & 9.60 s & 93.72\% &
-\textbf{91.86\%} & \textbf{0.9189} \\
-\textbf{CNN-2 Profunda} & 25 & 43.21 s & 99.59\% &
-\textbf{99.59\%} & \textbf{0.9959} \\
-\textbf{CNN-3 Regularizada} & 25 & 42.95 s & 99.31\% &
-\textbf{99.31\%} & \textbf{0.9931} \\
+CNN-1 Baseline & 20 & 9.60 s & 93.72\% &
+91.86\% & 0.9189 \\
+CNN-2 Profunda & 25 & 43.21 s & 99.59\% &
+99.59\% & 0.9959 \\
+CNN-3 Regularizada & 25 & 42.95 s & 99.31\% &
+99.31\% & 0.9931 \\
 \end{longtable}
 
 \begin{quote}
@@ -1263,7 +1263,7 @@ sistema mediante \texttt{nvidia-smi} y muestreo de CPU en
 \begin{itemize}
 \tightlist
 \item
-  \textbf{Utilización de GPU:} media de \textbf{77.7 \%} y
+  \textbf{Utilización de GPU:} media de 77.7 \% y
   pico de 98 \% sobre las 149 muestras (cada 0.5 s, incluye
   las fases en reposo y de preparación de datos); en los
   bloques de cómputo convolucional llega a 96 \% a 98 \%
@@ -1296,10 +1296,10 @@ Datos (decodificación con 20 workers) & 22 & 5.6 \% & 51.6 \% & 67.8 \% \\
 Entrenamiento (CNN en CUDA) & 119 & 94.4 \% & 54.7 \% & 57.3 \% \\
 \end{longtable}
 
-En la fase de datos la carga se reparte en los 20 hilos y la GPU está ociosa (VRAM en
+En la fase de datos la carga se reparte en los 20 hilos y la GPU no se usa (VRAM en
 \(\approx\)920 MiB, solo el escritorio); en la fase de entrenamiento la GPU salta a 94 \%
 y la VRAM sube a \(\approx\)1.8 GiB. Dos precisiones honestas sobre la gráfica: (1) la
-CPU \emph{no} queda ociosa durante el entrenamiento: el mapa de calor muestra unos 12 hilos
+CPU \emph{no} queda sin trabajo durante el entrenamiento: el mapa de calor muestra unos 12 hilos
 al 100 \% (probablemente el hilo de Python que lanza los kernels y los hilos de OpenMP de PyTorch
 en espera activa, no cómputo útil; no se perfiló) y el resto cerca de 55 \%; (2) el promedio de 51.6 \%
 en la fase de datos está diluido porque cada pasada de decodificación dura solo 0.57 s y el
@@ -1309,7 +1309,7 @@ muestreo es cada 0.5 s.
 \emph{Figura 5: Perfil temporal de utilización de GPU (\%) y
 saturación de CPU durante el entrenamiento.}
 
-Las capturas de pantalla de la terminal por fase están en la sección \textbf{Evidencia de Ejecución} (justo después del resumen).
+Las capturas de pantalla de la terminal por fase están en la sección Evidencia de Ejecución (justo después del resumen).
 
 \subsection{5.6 Efecto de los kernels CUDA propios
 (CuPy)}\label{efecto-de-los-kernels-cuda-propios-cupy}
@@ -1345,19 +1345,19 @@ Cómputo GPU con kernels (s)
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-\textbf{CNN-1 Baseline} & \(1.088 \pm 0.033\) &
-\(0.691 \pm 0.028\) & \textbf{1.58x} & 0.976 & 0.587 \\
-\textbf{CNN-2 Profunda} & \(4.755 \pm 0.191\) &
-\(4.230 \pm 0.170\) & \textbf{1.12x} & 4.504 & 4.224 \\
-\textbf{CNN-3 Regularizada} & \(4.925 \pm 0.163\) &
-\(4.422 \pm 0.130\) & \textbf{1.11x} & 4.813 & 4.363 \\
+CNN-1 Baseline & \(1.088 \pm 0.033\) &
+\(0.691 \pm 0.028\) & 1.58x & 0.976 & 0.587 \\
+CNN-2 Profunda & \(4.755 \pm 0.191\) &
+\(4.230 \pm 0.170\) & 1.12x & 4.504 & 4.224 \\
+CNN-3 Regularizada & \(4.925 \pm 0.163\) &
+\(4.422 \pm 0.130\) & 1.11x & 4.813 & 4.363 \\
 \end{longtable}
 
 (El cómputo GPU es la fase \texttt{step} de la corrida 1,
-media de las épocas 2 a 5: forward + backward + Adam, sin
+media de las épocas 2 a 5: forward pass + backprop + Adam, sin
 gather ni H2D.)
 
-\textbf{Microbenchmark por kernel}
+Microbenchmark por kernel
 (\texttt{notebooks/03\_cnn\_scratch.ipynb}, sección 4; lote
 64, 32 canales, 64x64; eventos CUDA, 20 repeticiones):
 
@@ -1380,12 +1380,12 @@ Speedup
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Convolución forward + backward (\texttt{im2col} + GEMM +
+Convolución forward pass + backprop (\texttt{im2col} + GEMM +
 \texttt{col2im}) & 7.640 & 4.696 & 1.63x \\
-ReLU forward & 0.266 & 0.178 & 1.50x \\
-ReLU forward + backward & 0.448 & 0.357 & 1.26x \\
-MaxPool 2x2 forward & 0.469 & 0.018 & 26.4x \\
-MaxPool 2x2 forward + backward & 0.954 & 0.207 & 4.61x \\
+ReLU forward pass & 0.266 & 0.178 & 1.50x \\
+ReLU forward pass + backprop & 0.448 & 0.357 & 1.26x \\
+MaxPool 2x2 forward pass & 0.469 & 0.018 & 26.4x \\
+MaxPool 2x2 forward pass + backprop & 0.954 & 0.207 & 4.61x \\
 Adam, 1 M parámetros & 0.138 & 0.010 & 13.2x \\
 \end{longtable}
 
@@ -1405,13 +1405,13 @@ Adam, 1 M parámetros & 0.138 & 0.010 & 13.2x \\
 \item
   \textbf{El microbenchmark exagera:} con 33 MB de entrada,
   el tensor cabe en la caché L2 de la GPU y las repeticiones
-  lo leen desde ahí (MaxPool forward en 18 µs implica
+  lo leen desde ahí (MaxPool forward pass en 18 µs implica
   \textasciitilde1.9 TB/s, mayor que el ancho de banda de la
   VRAM). En entrenamiento real las activaciones no están
   calientes, y lo que cuenta es la columna de épocas.
 \item
-  \textbf{En CNN-2 y CNN-3 el beneficio es de
-  \textasciitilde11 \%} porque el cómputo lo domina la
+  En CNN-2 y CNN-3 el beneficio es de
+  \textasciitilde11 \% porque el cómputo lo domina la
   multiplicación de matrices (cuBLAS) sobre la matriz
   \texttt{im2col}, que los kernels propios no tocan. En
   CNN-1 (pocas capas convolucionales y una Dense de
@@ -1462,10 +1462,10 @@ Datos medidos para CNN-3 (el más pesado), por época:
 \begin{itemize}
 \tightlist
 \item
-  \textbf{Tiempo secuencial} (Keras CPU, línea base):
+  Tiempo secuencial (Keras CPU, línea base):
   \(T_{\text{sec}} = 22.496\) s.
 \item
-  \textbf{Parte que la GPU no acelera}, medida en la corrida
+  Parte que la GPU no acelera, medida en la corrida
   CUDA (sección 5.3): armado del lote en CPU,
   \(T_{\text{gather}} = 0.037\) s, y transferencia H2D,
   \(T_{\text{H2D}} = 0.044\) s. Total:
@@ -1494,8 +1494,8 @@ obtuvo del propio \(T_{\text{GPU}}\)).
 \end{quote}
 
 \begin{quote}
-El speedup de CNN-3 (14.9x) está \textbf{lejos del techo de
-Amdahl (278x)}. La parte serial no es lo que lo limita:
+El speedup de CNN-3 (14.9x) está lejos del techo de
+Amdahl (278x). La parte serial no es lo que lo limita:
 gather + H2D son 0.36 \% del tiempo secuencial, aunque sí
 son el 5.4 \% del tiempo de una época en GPU (0.081 de 1.510
 s) y suben a 14 \% en CNN-1 (0.060 de 0.425 s). Lo que lo
@@ -1568,8 +1568,8 @@ fundamentos técnicos rigurosos a la pregunta de diseño:
   convolución directa).
 \item
   \textbf{Viabilidad en Scratch:} La implementación
-  \texttt{im2col} + cuBLAS en CuPy es \textbf{58.9x más
-  rápida que NumPy} en CNN-1 (92.9x con kernels propios),
+  \texttt{im2col} + cuBLAS en CuPy es 58.9x más
+  rápida que NumPy en CNN-1 (92.9x con kernels propios),
   con el mismo algoritmo y los mismos pesos. Es viable
   escribir una red acelerada por GPU desde cero, pero queda
   a 1.6x (CNN-1) a 2.9x (CNN-2 y CNN-3) de PyTorch + cuDNN,
@@ -1595,20 +1595,20 @@ fundamentos técnicos rigurosos a la pregunta de diseño:
 exclusivamente la matemática de la red a la GPU?}
 \begin{itemize}
 \tightlist
-\item \textbf{El trabajo de archivos no encaja en SIMT.} Leer un JPEG es una llamada al sistema
+\item El trabajo de archivos no encaja en SIMT. Leer un JPEG es una llamada al sistema
   operativo (I/O) que solo el host puede hacer, y decodificarlo es descompresión de Huffman con
   longitud variable de código y dependencias entre bits, con ramas distintas por imagen: en una
   GPU los hilos de un \emph{warp} divergirían. Cada imagen es independiente de las demás, así
   que el paralelismo natural es \emph{una imagen por núcleo de CPU}: 20 workers dieron 5.9x
   (sección 5.3b) y 20,000 img/s, más de lo que la GPU consume.
-\item \textbf{La matemática de la red sí es regular y densa.} Conv, GEMM, ReLU y Adam hacen la
+\item La matemática de la red sí es regular y densa. Conv, GEMM, ReLU y Adam hacen la
   misma operación sobre millones de elementos independientes, sin ramas, con alta intensidad
   aritmética. Es el caso para el que está hecha la GPU: 23x a 25x en la fase B.
-\item \textbf{Se paga el bus una sola vez y por poco.} El dataset decodificado (11,600
+\item Se paga el bus una sola vez y por poco. El dataset decodificado (11,600
   \(\times\) 3 \(\times\) 64 \(\times\) 64 \(\times\) 4 B = 570 MB) se prepara una vez en RAM;
   por época solo cruza el PCIe el lote ya armado (0.044 s, 3 \% a 10 \% de la época). Mover
   JPEG sin decodificar o decodificar en la GPU no reduciría ese costo y complicaría el código.
-\item \textbf{Cada recurso hace lo que mejor sabe.} CPU y GPU quedan ocupados en fases
+\item Cada recurso hace lo que mejor sabe. CPU y GPU quedan ocupados en fases
   distintas (figura 5), y la fase de datos se amortiza: 0.57 s una vez, contra 1.5 s por época.
 \end{itemize}
 
@@ -1647,13 +1647,23 @@ Biblioteca / función & Para qué se usó \\
 \endlastfoot
 \texttt{torch.cuda}, \texttt{.to('cuda')}, \texttt{torch.cuda.synchronize()}, \texttt{torch.cuda.Event} & Detectar la GPU, mover modelo y lotes, cronometrar con barreras y eventos CUDA (\texttt{scripts/benchmark.py}). \\
 \texttt{torch.backends.cudnn.benchmark = True} & cuDNN elige por autotuning el mejor algoritmo de convolución para cada forma de tensor. \\
-\textbf{cuDNN} & Convoluciones, BatchNorm y MaxPool directos (sin \texttt{im2col}) dentro de PyTorch. \\
-\textbf{cuBLAS} (\texttt{cp.matmul}, \texttt{torch.nn.Linear}) & GEMM de la convolución \texttt{im2col} y de las capas densas. \\
-\textbf{CuPy} (\texttt{cp.asarray}, \texttt{cp.cuda.Device().synchronize()}, \texttt{cp.cuda.Event}) & CUDA Python: arreglos en VRAM, transferencias H2D, sincronización, eventos. \\
-\texttt{cp.RawModule} / \texttt{cp.RawKernel} + \textbf{NVRTC} & Compilar y lanzar los kernels CUDA C propios (\texttt{im2col}, \texttt{col2im}, ReLU, MaxPool, Adam) con grid 1D de 256 hilos. \\
+cuDNN & Convoluciones, BatchNorm y MaxPool directos (sin \texttt{im2col}) dentro de PyTorch. \\
+cuBLAS (\texttt{cp.matmul}, \texttt{torch.nn.Linear}) & GEMM de la convolución \texttt{im2col} y de las capas densas. \\
+CuPy (\texttt{cp.asarray}, \texttt{cp.cuda.Device().synchronize()}, \texttt{cp.cuda.Event}) & CUDA Python: arreglos en VRAM, transferencias H2D, sincronización, eventos. \\
+\texttt{cp.RawModule} / \texttt{cp.RawKernel} + NVRTC & Compilar y lanzar los kernels CUDA C propios (\texttt{im2col}, \texttt{col2im}, ReLU, MaxPool, Adam) con grid 1D de 256 hilos. \\
 \texttt{nvidia-smi}, \texttt{psutil} & Telemetría de GPU y de cada núcleo de CPU (\texttt{scripts/evidence.py}). \\
 \texttt{torch.utils.data.DataLoader(num\_workers=20)}, PIL & Lado CPU: decodificación JPEG multiproceso. No toca la GPU. \\
 \end{longtable}
+
+\subsection{6.6 Demo en vivo}\label{demo}
+
+La carpeta \texttt{demo/} tiene una app de Streamlit (\texttt{streamlit run demo/app.py}) que clasifica la seña
+con la CNN-2 entrenada (99.59 \% en test), con la inferencia en la GPU. Lee la cámara con OpenCV, recorta un cuadrado
+central, lo pasa a 64x64 igual que en el entrenamiento y muestra el top 3, el tiempo de inferencia y los fps, con un tope
+de 30. Se puede cambiar entre \texttt{cuda} y \texttt{cpu} para comparar. Los pesos están en
+\texttt{demo/weights/cnn2.pt} (se regeneran con \texttt{demo/train\_demo.py}, unos 45 s en la RTX 4070 SUPER).
+Con la cámara de la máquina de pruebas (MJPG, poca luz) se leyeron 14 fps; el modelo se entrenó con fotos del dataset,
+así que con una cámara normal la exactitud es menor que la de test.
 
 \clearpage
 \section{7. Verificación del Cumplimiento de la Rúbrica}\label{verificacion-rubrica}

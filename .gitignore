@@ -36,3 +36,6 @@ data/cache/
 *.xdv
 *.fls
 *.fdb_latexmk
+
+# Pesos del demo (pesan ~2 MB, se versionan)
+!demo/weights/*.pt
