@@ -1,8 +1,8 @@
 """
-Benchmark de la CNN desde cero (misma forma de salida que src/benchmark.py).
+Benchmark de la CNN desde cero (misma forma de salida que scripts/benchmark.py).
 
-    python src/scratch/bench_scratch.py --backend numpy --run 1 --models "CNN-1 Baseline"
-    python src/scratch/bench_scratch.py --backend numpy --run 1 --train-subset 2000
+    python scripts/bench_scratch.py --backend numpy --run 1 --models "CNN-1 Baseline"
+    python scripts/bench_scratch.py --backend numpy --run 1 --train-subset 2000
 
 Protocolo: lote 64, float32, semilla 42, Adam lr=1e-3, épocas fijas, sin early stopping ni
 validación. El lote se arma en CPU (gather); con CuPy se copia a la GPU dentro del ciclo (h2d).
@@ -16,7 +16,7 @@ from pathlib import Path
 
 import numpy as np
 
-ROOT = Path(__file__).resolve().parent.parent.parent
+ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 from scratch.cache_data import load_cached                    # noqa: E402
 

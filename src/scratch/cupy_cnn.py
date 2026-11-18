@@ -25,20 +25,20 @@ import os
 import sys
 from pathlib import Path
 
-# Auto-detect CUDA_PATH and DLL directories if needed
-site_packages = Path(sys.executable).parent.parent / "Lib" / "site-packages"
-if "CUDA_PATH" not in os.environ:
-    candidate = site_packages / "nvidia" / "cuda_runtime"
-    if candidate.exists():
-        os.environ["CUDA_PATH"] = str(candidate)
-
-torch_lib = site_packages / "torch" / "lib"
-if torch_lib.exists():
-    try:
-        os.add_dll_directory(str(torch_lib))
-    except Exception:
-        pass
-    os.environ["PATH"] = str(torch_lib) + os.pathsep + os.environ.get("PATH", "")
+# En Windows, localizar CUDA y las DLL de torch dentro del venv. En Linux no hace falta.
+if sys.platform == "win32":
+    site_packages = Path(sys.executable).parent.parent / "Lib" / "site-packages"
+    if "CUDA_PATH" not in os.environ:
+        candidate = site_packages / "nvidia" / "cuda_runtime"
+        if candidate.exists():
+            os.environ["CUDA_PATH"] = str(candidate)
+    torch_lib = site_packages / "torch" / "lib"
+    if torch_lib.exists():
+        try:
+            os.add_dll_directory(str(torch_lib))
+        except Exception:
+            pass
+        os.environ["PATH"] = str(torch_lib) + os.pathsep + os.environ.get("PATH", "")
 
 import cupy as cp
 import numpy as np

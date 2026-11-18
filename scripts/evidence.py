@@ -7,7 +7,7 @@ Fase "train": entrena una CNN en CUDA (GPU ocupada, CPU casi ociosa).
 Muestrea cada 0.5 s los núcleos de CPU (psutil) y la GPU (nvidia-smi) a un CSV y genera una
 gráfica. Escribe results/evidence/phase.txt para poder tomar capturas de pantalla por fase.
 
-    python src/evidence.py --epochs 40
+    python scripts/evidence.py --epochs 40
 """
 
 import argparse

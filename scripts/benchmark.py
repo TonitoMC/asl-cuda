@@ -2,8 +2,8 @@
 Benchmark PyTorch por fases: preparación de datos (CPU), transferencia CPU->GPU,
 entrenamiento y evaluación.
 
-    python src/benchmark.py --device cuda --run 1
-    python src/benchmark.py --device cpu  --run 1
+    python scripts/benchmark.py --device cuda --run 1
+    python scripts/benchmark.py --device cpu  --run 1
 
 Salida: results/torch_<device>_run<N>.json con la misma forma que los de Keras.
 """

@@ -22,6 +22,7 @@ COLORS = {
     "torch_cuda": "#2ca02c",    # Verde
     "scratch_numpy": "#d62728", # Rojo
     "scratch_cupy": "#ff7f0e",  # Naranja
+    "scratch_cupy_kernels": "#9467bd",  # Morado
 }
 
 LABELS = {
@@ -30,6 +31,7 @@ LABELS = {
     "torch_cuda": "PyTorch (CUDA cuDNN)",
     "scratch_numpy": "NumPy (CPU desde cero)",
     "scratch_cupy": "CuPy (GPU desde cero)",
+    "scratch_cupy_kernels": "CuPy + kernels CUDA propios",
 }
 
 
@@ -41,10 +43,10 @@ def load_summary():
 def plot_times_comparison(summary):
     """Comparativa de s/época entre configuraciones."""
     models = ["CNN-1 Baseline", "CNN-2 Profunda", "CNN-3 Regularizada"]
-    configs = ["keras_cpu", "torch_cpu", "torch_cuda", "scratch_cupy"]
+    configs = ["keras_cpu", "torch_cpu", "torch_cuda", "scratch_cupy", "scratch_cupy_kernels"]
 
     x = np.arange(len(models))
-    width = 0.2
+    width = 0.16
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -96,9 +98,9 @@ def plot_speedups(summary):
     if not base:
         return
 
-    configs = ["torch_cuda", "scratch_cupy"]
+    configs = ["torch_cuda", "scratch_cupy", "scratch_cupy_kernels"]
     x = np.arange(len(models))
-    width = 0.35
+    width = 0.26
 
     fig, ax = plt.subplots(figsize=(9, 5.5))
 

@@ -1,0 +1,51 @@
+{
+  "device": "cpu",
+  "run": "3",
+  "framework": "numpy",
+  "batch": 64,
+  "train_size": 11600,
+  "modelos": {
+    "CNN-1 Baseline": {
+      "parametros": 4221405,
+      "epocas": 5,
+      "train_seconds": 426.785,
+      "epoch_seconds": [
+        86.113,
+        84.97,
+        84.836,
+        85.034,
+        85.831
+      ],
+      "gather_seconds": [
+        0.165,
+        0.152,
+        0.154,
+        0.153,
+        0.152
+      ],
+      "h2d_seconds": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "step_seconds": [
+        85.947,
+        84.817,
+        84.681,
+        84.881,
+        85.678
+      ],
+      "loss": [
+        2.9664,
+        1.9182,
+        1.352,
+        1.0054,
+        0.7835
+      ],
+      "eval_seconds": 4.776,
+      "accuracy": 0.8289655172413793
+    }
+  }
+}

@@ -5,7 +5,7 @@ y ReduceLROnPlateau, replicando exactamente la configuración del Lab 3.
 Demuestra que la versión acelerada en GPU alcanza la precisión esperada (~99 %)
 en cuestión de segundos/minutos.
 
-    python src/train_full.py
+    python scripts/train_full.py
 """
 
 import copy

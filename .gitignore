@@ -27,3 +27,12 @@ __pycache__/
 # Cache de datos decodificados
 data/cache/
 *.npy
+
+# Auxiliares de LaTeX (docs/ solo conserva INFORME.tex e INFORME.pdf)
+*.aux
+*.log
+*.toc
+*.out
+*.xdv
+*.fls
+*.fdb_latexmk
