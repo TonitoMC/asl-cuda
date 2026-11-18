@@ -1180,7 +1180,7 @@ y porque incluye gather y H2D, que la GPU no acelera.
 Se verificó que la aceleración en GPU preserva la precisión
 del modelo mediante un entrenamiento completo con
 \texttt{EarlyStopping(patience=5)} y
-\texttt{ReduceLROnPlateau(factor=0.5,\ patience=2)}:
+\texttt{ReduceLROnPlateau(factor=0.3,\ patience=2)}:
 
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1831}}
@@ -1633,10 +1633,47 @@ central, lo pasa a 64x64 igual que en el entrenamiento y muestra el top 3, el ti
 de 30. Se puede cambiar entre \texttt{cuda} y \texttt{cpu} para comparar. Los pesos están en
 \texttt{demo/weights/cnn2.pt} (se regeneran con \texttt{demo/train\_demo.py}, unos 45 s en la RTX 4070 SUPER).
 Con la cámara de la máquina de pruebas (MJPG, poca luz) se leyeron 14 fps; el modelo se entrenó con fotos del dataset,
-así que con una cámara normal acierta bastante menos que en el test (ver limitaciones en la sección 7).
+así que con una cámara normal acierta bastante menos que en el test (ver limitaciones en la sección 8).
 
 \clearpage
-\section{7. Cumplimiento de la rúbrica}\label{verificacion-rubrica}
+\section{7. Conclusiones}\label{conclusiones}
+
+Resumen de lo medido, en segundos por época (media de las épocas 2 a 5, 3 corridas; PyTorch CPU 1 corrida), de la más rápida a la más lenta
+en CNN-3, el modelo más pesado. El speedup es contra Keras CPU, la solución secuencial original.
+
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+Configuración & CNN-1 (s) & CNN-1 vs Keras & CNN-3 (s) & CNN-3 vs Keras \\
+\hline
+PyTorch en GPU (cuDNN) & 0.425 & 9.6x & 1.510 & 14.9x \\
+CuPy en GPU, con kernels CUDA propios & 0.691 & 5.9x & 4.422 & 5.1x \\
+CuPy en GPU, sin kernels propios & 1.088 & 3.8x & 4.925 & 4.6x \\
+Keras en CPU (línea base) & 4.085 & 1.0x & 22.496 & 1.0x \\
+PyTorch en CPU & 9.583 & 0.4x & 34.106 & 0.7x \\
+NumPy en CPU, desde cero & 64.123 & 0.06x & no medido & --- \\
+\hline
+\end{tabular}
+\end{center}
+
+Qué dicen los números:
+\begin{itemize}
+\tightlist
+\item La GPU entrena entre 3.8x y 14.9x más rápido que el CPU, según la implementación. Con la misma red en PyTorch, 22.6x más rápido que en CPU en CNN-3.
+\item Los kernels CUDA propios fueron más rápidos que CuPy sin kernels (1.58x en CNN-1, 1.11x en CNN-3), pero siguen más lentos que PyTorch en GPU
+  (1.6x en CNN-1, 2.9x en CNN-3). La causa: PyTorch usa cuDNN, que hace la convolución sin armar la matriz \texttt{im2col} (hasta 150 MB por lote) y
+  elige el algoritmo por autotuning, mientras que nuestras versiones tienen que escribirla y leerla de la memoria de la GPU.
+\item En CNN-3 el cómputo lo domina la multiplicación de matrices (cuBLAS), que no cambia entre CuPy con y sin kernels propios; por eso los kernels propios ayudan menos ahí que en CNN-1.
+\item Dentro del CPU, Keras es más rápido que PyTorch (1.5x a 2.3x). El speedup contra Keras es el más conservador; contra PyTorch CPU es mayor.
+\item La fase de datos (leer y decodificar los 11,600 JPEG) pasa de 3.35 s con 1 worker a 0.57 s con 20, 5.9x, y se paga una sola vez; el resto del tiempo es entrenamiento.
+\item Copiar el lote de CPU a GPU cuesta 0.044 a 0.051 s por época, entre 3 \% (CNN-3) y 10 \% (CNN-1) de la época. Sigue siendo el siguiente cuello de botella si se quiere ir más rápido.
+\end{itemize}
+
+Lo que no se midió: NumPy en CNN-2 y CNN-3 (se estimó, ver 2.2), PyTorch CPU con más de una corrida, otros tamaños de lote, y la exactitud con
+cada implementación después de 5 épocas (se reporta la del entrenamiento completo, sección 5.4).
+
+\clearpage
+\section{8. Cumplimiento de la rúbrica}\label{verificacion-rubrica}
 
 \begin{longtable}[]{@{}p{0.25\linewidth}p{0.45\linewidth}p{0.24\linewidth}@{}}
 \toprule\noalign{}
@@ -1688,7 +1725,7 @@ Javier España, 23361 (\texttt{Javier-Espana}) & Primera implementación de la C
 \end{longtable}
 
 \clearpage
-\section{8. Referencias}\label{referencias-bibliogruxe1ficas}
+\section{9. Referencias}\label{referencias-bibliogruxe1ficas}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}

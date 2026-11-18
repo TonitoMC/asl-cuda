@@ -36,7 +36,21 @@ Todas las comparaciones entre pares de configuraciones: [`results/speedup_matrix
 Los kernels propios ayudan sobre todo en CNN-1; en CNN-2 y CNN-3 manda la multiplicación de matrices (cuBLAS),
 que no se toca. Detalle y microbenchmark por kernel en la sección 5.6 del informe.
 
-Entrenamiento completo con `EarlyStopping(patience=5)` y `ReduceLROnPlateau(factor=0.5, patience=2)`
+Lectura de los resultados (CNN-3, la más pesada, contra Keras CPU):
+
+| Orden de más rápida a más lenta | s/época | vs Keras CPU |
+|---|:---:|:---:|
+| PyTorch en GPU (cuDNN) | 1.510 | 14.9x |
+| CuPy en GPU con kernels propios | 4.422 | 5.1x |
+| CuPy en GPU sin kernels propios | 4.925 | 4.6x |
+| Keras en CPU | 22.496 | 1.0x |
+| PyTorch en CPU | 34.106 | 0.7x |
+
+Los kernels propios le ganan a CuPy sin kernels pero siguen detrás de PyTorch en GPU, que usa cuDNN y no arma la matriz `im2col`.
+Los datos se preparan en CPU (5.9x con 20 workers contra 1) y la copia de cada lote a la GPU cuesta 3 % a 10 % de la época.
+El 99 % de exactitud sale de un test del mismo dataset (frames de una sola persona), así que no generaliza a una cámara distinta.
+
+Entrenamiento completo con `EarlyStopping(patience=5)` y `ReduceLROnPlateau(factor=0.3, patience=2)`
 (RTX 4070 SUPER): CNN-1 91.86 %, CNN-2 99.59 %, CNN-3 99.31 % de exactitud en test.
 
 ## Organización del código
