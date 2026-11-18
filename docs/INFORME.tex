@@ -740,6 +740,22 @@ complementarias:
   convoluciones de alta densidad.
 \end{enumerate}
 
+\subsection{4.0 Qué son cuDNN y cuBLAS}\label{cudnn}
+
+Ambas son bibliotecas de NVIDIA, ya escritas y optimizadas a mano para cada generación de GPU, que se llaman desde el código en vez de programar
+los kernels CUDA uno mismo.
+\begin{itemize}
+\tightlist
+\item cuBLAS es la versión en GPU de BLAS, la biblioteca estándar de álgebra lineal. Su operación central es GEMM, la multiplicación de matrices, que es lo que
+  usan las capas densas y (vía \texttt{im2col}) las convoluciones de nuestra implementación desde cero. Es lo que llama \texttt{cp.matmul} en CuPy.
+\item cuDNN (CUDA Deep Neural Network library) es la biblioteca de NVIDIA para redes neuronales. Trae versiones optimizadas de convolución (forward pass y backprop), pooling,
+  BatchNorm, ReLU y softmax. Para la convolución tiene varios algoritmos (directo, FFT, Winograd, GEMM implícita) y puede elegir el mejor para cada tamaño de tensor
+  (\texttt{torch.backends.cudnn.benchmark = True}). Su ventaja sobre nuestro \texttt{im2col} es que no materializa la matriz intermedia en memoria.
+\end{itemize}
+PyTorch las usa por debajo cuando el modelo corre con \texttt{.to('cuda')}: la convolución va a cuDNN y las capas densas a cuBLAS. Por eso la versión
+de PyTorch en GPU es la más rápida: no escribimos nosotros esos kernels, usamos los de NVIDIA. En la versión desde cero solo usamos cuBLAS y escribimos
+nuestros propios kernels para lo demás.
+
 \subsection{4.1 im2col y kernels}\label{algoritmo-im2col-y-mapeo-matricial-en-gpu-cupy-scratch}
 
 Para ejecutar la convolución 2D en GPU sin depender de
