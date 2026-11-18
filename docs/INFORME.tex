@@ -220,6 +220,45 @@ en GPU convergieron con Early Stopping a \textbf{99.59 \% de
 exactitud en CNN-2} y \textbf{99.31 \% en CNN-3}.
 
 \clearpage
+\section*{Evidencia de Ejecución: CPU en la fase de datos, GPU en el entrenamiento}
+\addcontentsline{toc}{section}{Evidencia de Ejecución: CPU en la fase de datos, GPU en el entrenamiento}
+
+Capturas reales de la terminal (\texttt{nvidia-smi} y \texttt{top} por núcleo) en la RTX 4070 SUPER, tomadas con
+\texttt{scripts/capture\_evidence.sh} mientras corría cada fase. Los recuadros amarillos y las notas se
+agregaron encima de la captura original (sin tocar los números); los textos originales están en
+\texttt{results/evidence/screens/}.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{|p{0.26\textwidth}|c|c|p{0.30\textwidth}|}
+\hline
+\textbf{Fase} & \textbf{GPU (uso)} & \textbf{GPU (proceso CUDA)} & \textbf{CPU} \\
+\hline
+\textbf{A. Preparación de datos} & \textbf{4 \%} (31 W) & \textbf{ninguno} & \textbf{20 hilos} al 45--67 \%, 20 procesos \texttt{pt\_data\_worker} \\
+\hline
+\textbf{B. Entrenamiento CUDA} & \textbf{96 \%} (183 W) & \textbf{\texttt{python3}, tipo C, 836 MiB} & hilos de PyTorch y el lanzador de kernels \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Qué demuestran:} (1) mientras se leen y decodifican las imágenes la GPU está prácticamente ociosa
+y trabaja la CPU con todos sus hilos; (2) cuando empieza el entrenamiento la GPU salta a 96 \% y aparece un
+proceso de cómputo CUDA en ella. Es decir, la preparación de archivos corre en CPU y la matemática de la red en GPU.
+
+\begin{center}
+\includegraphics[width=\textwidth]{../results/evidence/screens/2_datos_cpu_anotada.png}\\
+\emph{Figura A: Fase A, preparación de datos. GPU al 4 \%, sin proceso de cómputo (solo procesos gráficos \texttt{G}); CPU con 20 hilos ocupados.}
+\end{center}
+
+\clearpage
+\begin{center}
+\includegraphics[width=\textwidth]{../results/evidence/screens/3_entrenamiento_gpu_anotada.png}\\
+\emph{Figura B: Fase B, entrenamiento en CUDA. GPU al 96 \% (183 W de 220 W, 1,904 MiB de VRAM); \texttt{python3} aparece con tipo \texttt{C} (cómputo) usando 836 MiB.}
+\end{center}
+
+La captura en reposo (\texttt{1\_reposo.png}) y las gráficas de tiempo (sección 5.5) completan la evidencia.
+
+\clearpage
 \section{1. Análisis del Algoritmo Secuencial (Paso
 1)}\label{anuxe1lisis-del-algoritmo-secuencial-paso-1}
 
@@ -1244,25 +1283,7 @@ muestreo es cada 0.5 s.
 \emph{Figura 5: Perfil temporal de utilización de GPU (\%) y
 saturación de CPU durante el entrenamiento.}
 
-\clearpage
-\subsubsection*{Capturas de pantalla de la terminal por fase}
-
-Capturas reales de la terminal (\texttt{nvidia-smi} y \texttt{top} por núcleo) tomadas con
-\texttt{scripts/capture\_evidence.sh} mientras corría cada fase; los textos están en
-\texttt{results/evidence/screens/}. La GPU es la RTX 4070 SUPER.
-
-\begin{center}
-\includegraphics[width=\textwidth]{../results/evidence/screens/2_datos_cpu.png}\\
-\emph{Figura 6: Fase A, preparación de datos en CPU. GPU al 7 \% (33 W, sin proceso de cómputo
-en la lista) y los 20 hilos de CPU entre 47 \% y 64 \%.}
-
-\clearpage
-\includegraphics[width=\textwidth]{../results/evidence/screens/3_entrenamiento_gpu.png}\\
-\emph{Figura 7: Fase B, entrenamiento en CUDA. GPU al 96 \% (183 W de 220 W), 1,904 MiB de VRAM, y
-\texttt{python3} aparece con tipo \texttt{C} (cómputo) usando 836 MiB.}
-\end{center}
-
-La captura en reposo está en \texttt{results/evidence/screens/1\_reposo.png}.
+Las capturas de pantalla de la terminal por fase están en la sección \textbf{Evidencia de Ejecución} (justo después del resumen).
 
 \subsection{5.6 Efecto de los kernels CUDA propios
 (CuPy)}\label{efecto-de-los-kernels-cuda-propios-cupy}
