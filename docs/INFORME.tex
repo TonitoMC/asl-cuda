@@ -182,7 +182,7 @@ Angel Esquit \quad 23221\par}
   (\texttt{cupy-cuda12x}), TensorFlow 2.18, NumPy 2.2.6
 \end{itemize}
 
-\section{Resumen Ejecutivo}\label{resumen-ejecutivo}
+\section{Resumen}\label{resumen-ejecutivo}
 
 El presente proyecto aborda la aceleración computacional del
 entrenamiento de tres arquitecturas de Redes Neuronales
@@ -246,8 +246,8 @@ en GPU convergieron con Early Stopping a 99.59 \% de
 exactitud en CNN-2 y 99.31 \% en CNN-3.
 
 \clearpage
-\section*{Evidencia de Ejecución: CPU en la fase de datos, GPU en el entrenamiento}
-\addcontentsline{toc}{section}{Evidencia de Ejecución: CPU en la fase de datos, GPU en el entrenamiento}
+\section*{Evidencia de ejecución}
+\addcontentsline{toc}{section}{Evidencia de ejecución}
 
 Capturas reales de la terminal (\texttt{nvidia-smi} y \texttt{top} por núcleo) en la RTX 4070 SUPER, tomadas con
 \texttt{scripts/capture\_evidence.sh} mientras corría cada fase. Los recuadros amarillos y las notas se
@@ -285,11 +285,9 @@ proceso de cómputo CUDA en ella. Es decir, la preparación de archivos corre en
 La captura en reposo (\texttt{1\_reposo.png}) y las gráficas de tiempo (sección 5.5) completan la evidencia.
 
 \clearpage
-\section{1. Análisis del Algoritmo Secuencial (Paso
-1)}\label{anuxe1lisis-del-algoritmo-secuencial-paso-1}
+\section{1. Algoritmo secuencial}\label{anuxe1lisis-del-algoritmo-secuencial-paso-1}
 
-\subsection{1.1 Descripción del Algoritmo y Flujo de
-Trabajo}\label{descripciuxf3n-del-algoritmo-y-flujo-de-trabajo}
+\subsection{1.1 Flujo de trabajo}\label{descripciuxf3n-del-algoritmo-y-flujo-de-trabajo}
 
 El problema original consiste en clasificar imágenes en
 color de 64x64 píxeles en 29 categorías (26 letras de la `A'
@@ -367,8 +365,7 @@ Stopping, ReduceLROnPlateau & CPU / GPU & Media \\
 métricas (Accuracy, Macro F1) & CPU / GPU & Media \\
 \end{longtable}
 
-\subsection{1.2 Identificación de Operaciones Repetitivas e
-Intensivas}\label{identificaciuxf3n-de-operaciones-repetitivas-e-intensivas}
+\subsection{1.2 Operaciones repetitivas}\label{identificaciuxf3n-de-operaciones-repetitivas-e-intensivas}
 
 Durante cada época de entrenamiento se iteran 182 lotes de
 tamaño 64. La tabla siguiente sintetiza las repeticiones
@@ -407,8 +404,7 @@ Inferencia en Validación & Lote de validación (23 lotes) &
 23 pasos & 575 pasos \\
 \end{longtable}
 
-\subsection{1.3 Análisis de Complejidad y Operaciones MAC
-(Multiply-Accumulate)}\label{anuxe1lisis-de-complejidad-y-operaciones-mac-multiply-accumulate}
+\subsection{1.3 Operaciones MAC}\label{anuxe1lisis-de-complejidad-y-operaciones-mac-multiply-accumulate}
 
 La carga de trabajo matemática está dominada por las capas
 convolucionales y completamente conectadas. Para una capa
@@ -481,11 +477,9 @@ claridad por qué en la CPU secuencial CNN-2 y CNN-3 tardan
 \end{quote}
 
 \clearpage
-\section{2. Medición del Tiempo Secuencial (Paso
-2)}\label{mediciuxf3n-del-tiempo-secuencial-paso-2}
+\section{2. Tiempos secuenciales}\label{mediciuxf3n-del-tiempo-secuencial-paso-2}
 
-\subsection{2.1 Protocolo Experimental de
-Medición}\label{protocolo-experimental-de-mediciuxf3n}
+\subsection{2.1 Protocolo}\label{protocolo-experimental-de-mediciuxf3n}
 
 Para aislar rigurosamente el \emph{throughput} computacional
 y evitar sesgos estadísticos, se estableció el siguiente
@@ -522,8 +516,7 @@ protocolo:
   encolamiento del host.
 \end{enumerate}
 
-\subsection{2.2 Tiempos Secuenciales en
-CPU}\label{tiempos-secuenciales-en-cpu}
+\subsection{2.2 Resultados en CPU}\label{tiempos-secuenciales-en-cpu}
 
 Se evaluaron tres variantes en CPU:
 
@@ -602,15 +595,12 @@ computacional cuando no intervienen bibliotecas altamente
 vectorizadas en C/C++ ni aceleradores paralelos.
 
 \clearpage
-\section{3. Oportunidades de Paralelización y Separación
-CPU/GPU (Paso
-3)}\label{oportunidades-de-paralelizaciuxf3n-y-separaciuxf3n-cpugpu-paso-3}
+\section{3. Separación CPU/GPU}\label{oportunidades-de-paralelizaciuxf3n-y-separaciuxf3n-cpugpu-paso-3}
 
 \emph{Cumplimiento estricto del criterio de evaluación (40\%
 de la nota final)}
 
-\subsection{3.1 Justificación Teórica de la Separación de
-Roles}\label{justificaciuxf3n-teuxf3rica-de-la-separaciuxf3n-de-roles}
+\subsection{3.1 Qué va en cada lado}\label{justificaciuxf3n-teuxf3rica-de-la-separaciuxf3n-de-roles}
 
 El enunciado del proyecto exige de forma taxativa:
 
@@ -627,8 +617,7 @@ esta división por principios físicos y algorítmicos:
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  \textbf{Por qué la preparación de datos NO debe ir en
-  GPU:}
+  \textbf{Datos: se quedan en la CPU}
 
   \begin{itemize}
   \tightlist
@@ -655,8 +644,7 @@ esta división por principios físicos y algorítmicos:
     GPU computa el lote actual.
   \end{itemize}
 \item
-  \textbf{Por qué la matemática de la red SÍ pertenece a la
-  GPU:}
+  \textbf{Red neuronal: va a la GPU}
 
   \begin{itemize}
   \tightlist
@@ -694,8 +682,7 @@ esta división por principios físicos y algorítmicos:
 \end{tikzpicture}}
 \end{center}
 
-\subsection{3.2 Evaluación del Rendimiento del Pipeline en
-CPU}\label{evaluaciuxf3n-del-rendimiento-del-pipeline-en-cpu}
+\subsection{3.2 Pipeline de datos en CPU}\label{evaluaciuxf3n-del-rendimiento-del-pipeline-en-cpu}
 
 Se midió experimentalmente el tiempo de decodificación y
 preprocesamiento de las 11,600 imágenes de entrenamiento
@@ -735,9 +722,7 @@ garantiza que la GPU jamás sufra de inanición (\emph{GPU
 starvation}).
 
 \clearpage
-\section{4. Diseño Paralelo: Arquitectura, Memoria y Mapeo
-CUDA (Paso
-4)}\label{diseuxf1o-paralelo-arquitectura-memoria-y-mapeo-cuda-paso-4}
+\section{4. Diseño paralelo}\label{diseuxf1o-paralelo-arquitectura-memoria-y-mapeo-cuda-paso-4}
 
 El proyecto abordó dos implementaciones paralelas
 complementarias:
@@ -755,9 +740,7 @@ complementarias:
   convoluciones de alta densidad.
 \end{enumerate}
 
-\subsection{\texorpdfstring{4.1 Algoritmo \texttt{im2col} y
-Mapeo Matricial en GPU (CuPy
-Scratch)}{4.1 Algoritmo im2col y Mapeo Matricial en GPU (CuPy Scratch)}}\label{algoritmo-im2col-y-mapeo-matricial-en-gpu-cupy-scratch}
+\subsection{4.1 im2col y kernels}\label{algoritmo-im2col-y-mapeo-matricial-en-gpu-cupy-scratch}
 
 Para ejecutar la convolución 2D en GPU sin depender de
 bibliotecas de alto nivel como cuDNN, se implementó el
@@ -830,8 +813,7 @@ algoritmo estándar \texttt{im2col} adaptado a CUDA:
   las pruebas y como punto de comparación en la sección 5.6.
 \end{enumerate}
 
-\subsection{4.2 Jerarquía de Memoria y Flujo de
-Datos}\label{jerarquuxeda-de-memoria-y-flujo-de-datos}
+\subsection{4.2 Memoria y flujo de datos}\label{jerarquuxeda-de-memoria-y-flujo-de-datos}
 
 El diseño respeta estrictamente los principios de localidad
 y jerarquía de memoria en CUDA:
@@ -874,12 +856,9 @@ y jerarquía de memoria en CUDA:
 \end{verbatim}
 
 \clearpage
-\section{5. Implementación CUDA y Resultados Experimentales
-(Paso
-5)}\label{implementaciuxf3n-cuda-y-resultados-experimentales-paso-5}
+\section{5. Implementación y resultados}\label{implementaciuxf3n-cuda-y-resultados-experimentales-paso-5}
 
-\subsection{5.1 Tabla Consolidada de Tiempos y
-Rendimiento}\label{tabla-consolidada-de-tiempos-y-rendimiento}
+\subsection{5.1 Tiempos}\label{tabla-consolidada-de-tiempos-y-rendimiento}
 
 La siguiente tabla presenta los resultados consolidados de
 todas las corridas experimentales (3 corridas independientes
@@ -931,8 +910,7 @@ PyTorch CUDA (cuDNN) & NVIDIA RTX 4070 SUPER &
 s & \(1.510 \pm 0.012\) s \\
 \end{longtable}
 
-\subsection{5.2 Análisis de Speedup
-Obtenido}\label{anuxe1lisis-de-speedup-obtenido}
+\subsection{5.2 Speedup}\label{anuxe1lisis-de-speedup-obtenido}
 
 El speedup formal se calcula como:
 \[S = \frac{T_{\text{secuencial}}}{T_{\text{paralelo}}}\]
@@ -1123,8 +1101,7 @@ para cada configuración.}
 \emph{Figura 2: Speedup obtenido en GPU frente a la línea
 base secuencial de Keras CPU.}
 
-\subsection{5.3 Desglose de Fases en GPU (PyTorch
-CUDA)}\label{desglose-de-fases-en-gpu-pytorch-cuda}
+\subsection{5.3 Tiempo por fase en GPU}\label{desglose-de-fases-en-gpu-pytorch-cuda}
 
 Para verificar la sobrecarga del bus de interconexión
 host-dispositivo, se instrumentó el tiempo de cada subfase
@@ -1198,8 +1175,7 @@ gana: 23x a 25x contra el mismo código de PyTorch en CPU. El speedup de la épo
 menor al de la fase B porque la línea base (Keras) es más rápida que PyTorch en CPU
 y porque incluye gather y H2D, que la GPU no acelera.
 
-\subsection{5.4 Entrenamiento Completo y Convergencia de
-Modelos}\label{entrenamiento-completo-y-convergencia-de-modelos}
+\subsection{5.4 Entrenamiento completo}\label{entrenamiento-completo-y-convergencia-de-modelos}
 
 Se verificó que la aceleración en GPU preserva la precisión
 del modelo mediante un entrenamiento completo con
@@ -1253,8 +1229,7 @@ eso no son comparables con los de la sección 5.1.
 (Cross-Entropy) y exactitud de validación durante el
 entrenamiento en GPU.}
 
-\subsection{5.5 Evidencia de Hardware y
-Telemetría}\label{evidencia-de-hardware-y-telemetruxeda}
+\subsection{5.5 Uso de hardware}\label{evidencia-de-hardware-y-telemetruxeda}
 
 Durante las pruebas de carga, se monitoreó la telemetría del
 sistema mediante \texttt{nvidia-smi} y muestreo de CPU en
@@ -1311,8 +1286,7 @@ saturación de CPU durante el entrenamiento.}
 
 Las capturas de pantalla de la terminal por fase están en la sección Evidencia de Ejecución (justo después del resumen).
 
-\subsection{5.6 Efecto de los kernels CUDA propios
-(CuPy)}\label{efecto-de-los-kernels-cuda-propios-cupy}
+\subsection{5.6 Kernels propios}\label{efecto-de-los-kernels-cuda-propios-cupy}
 
 Pregunta: ¿se justifica escribir kernels propios en lugar de
 usar solo las operaciones de CuPy? Se midió la misma red
@@ -1446,11 +1420,9 @@ Adam, 1 M parámetros & 0.138 & 0.010 & 13.2x \\
 \end{enumerate}
 
 \clearpage
-\section{6. Análisis Riguroso y Conclusiones (Paso
-6)}\label{anuxe1lisis-riguroso-y-conclusiones-paso-6}
+\section{6. Análisis y conclusiones}\label{anuxe1lisis-riguroso-y-conclusiones-paso-6}
 
-\subsection{6.1 Análisis mediante la Ley de
-Amdahl}\label{anuxe1lisis-mediante-la-ley-de-amdahl}
+\subsection{6.1 Ley de Amdahl}\label{anuxe1lisis-mediante-la-ley-de-amdahl}
 
 La Ley de Amdahl establece el límite teórico superior del
 speedup \(S\) cuando una fracción \(p\) del trabajo se
@@ -1510,8 +1482,7 @@ parte serial. Además, la comparación mezcla dos frameworks
 el speedup es de 22.6x en CNN-3.
 \end{quote}
 
-\subsection{6.2 Cuellos de Botella y Limitantes de
-Escalamiento}\label{cuellos-de-botella-y-limitantes-de-escalamiento}
+\subsection{6.2 Cuellos de botella}\label{cuellos-de-botella-y-limitantes-de-escalamiento}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -1550,8 +1521,7 @@ Escalamiento}\label{cuellos-de-botella-y-limitantes-de-escalamiento}
   comprobar.
 \end{enumerate}
 
-\subsection{6.3 Discusión: ¿PyTorch vs CUDA Python
-Puro?}\label{discusiuxf3n-pytorch-vs-cuda-python-puro}
+\subsection{6.3 PyTorch contra CUDA desde cero}\label{discusiuxf3n-pytorch-vs-cuda-python-puro}
 
 El desarrollo de la implementación en CuPy
 (\texttt{src/scratch/cupy\_cnn.py}) permitió responder con
@@ -1589,7 +1559,7 @@ fundamentos técnicos rigurosos a la pregunta de diseño:
   nítida del paralelismo masivo de CUDA.
 \end{itemize}
 
-\subsection{6.4 Discusión técnica (preguntas del enunciado)}\label{discusion-tecnica}
+\subsection{6.4 Discusión técnica}\label{discusion-tecnica}
 
 \textbf{¿Por qué es más eficiente procesar las imágenes con los múltiples núcleos del CPU y delegar
 exclusivamente la matemática de la red a la GPU?}
@@ -1636,7 +1606,7 @@ copias asíncronas, no implementadas). Con la red desde cero se ve el mismo efec
   14.9x y contra PyTorch CPU 22.6x en CNN-3.
 \end{itemize}
 
-\subsection{6.5 Librerías y funciones que permiten trabajar con la GPU}\label{librerias-gpu}
+\subsection{6.5 Librerías de GPU}\label{librerias-gpu}
 
 \begin{longtable}[]{@{}p{0.27\linewidth}p{0.66\linewidth}@{}}
 \toprule\noalign{}
@@ -1666,7 +1636,7 @@ Con la cámara de la máquina de pruebas (MJPG, poca luz) se leyeron 14 fps; el 
 así que con una cámara normal la exactitud es menor que la de test.
 
 \clearpage
-\section{7. Verificación del Cumplimiento de la Rúbrica}\label{verificacion-rubrica}
+\section{7. Cumplimiento de la rúbrica}\label{verificacion-rubrica}
 
 \begin{longtable}[]{@{}p{0.25\linewidth}p{0.45\linewidth}p{0.24\linewidth}@{}}
 \toprule\noalign{}
@@ -1717,8 +1687,7 @@ Javier España, 23361 (\texttt{Javier-Espana}) & Primera implementación de la C
 \end{longtable}
 
 \clearpage
-\section{8. Referencias
-Bibliográficas}\label{referencias-bibliogruxe1ficas}
+\section{8. Referencias}\label{referencias-bibliogruxe1ficas}
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
