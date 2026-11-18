@@ -1,0 +1,26 @@
+[
+  {
+    "workers":1,
+    "segundos":3.32,
+    "img_por_s":3494,
+    "speedup_vs_1":1.0
+  },
+  {
+    "workers":4,
+    "segundos":0.956,
+    "img_por_s":12128,
+    "speedup_vs_1":3.47
+  },
+  {
+    "workers":8,
+    "segundos":0.734,
+    "img_por_s":15809,
+    "speedup_vs_1":4.52
+  },
+  {
+    "workers":20,
+    "segundos":0.525,
+    "img_por_s":22076,
+    "speedup_vs_1":6.32
+  }
+]

@@ -227,7 +227,7 @@ def plot_training_convergence():
     ax2.legend(frameon=True, fontsize=9)
     ax2.grid(True, linestyle="--", alpha=0.5)
 
-    plt.suptitle("Entrenamiento Completo en GPU (NVIDIA RTX 5050) con Early Stopping y ReduceLROnPlateau", fontsize=13, fontweight="bold", y=1.02)
+    plt.suptitle("Entrenamiento Completo en GPU (NVIDIA RTX 4070 SUPER) con Early Stopping y ReduceLROnPlateau", fontsize=13, fontweight="bold", y=1.02)
     plt.tight_layout()
     p = OUT_DIR / "training_convergence.png"
     plt.savefig(p, dpi=180, bbox_inches="tight")

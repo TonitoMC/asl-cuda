@@ -2,7 +2,7 @@
 Evidencia de uso de hardware por fase.
 
 Fase "data":  decodifica el train varias veces con N workers (CPU multinúcleo, GPU ociosa).
-Fase "train": entrena una CNN en CUDA (GPU ocupada, CPU casi ociosa).
+Fase "train": entrena una CNN en CUDA (GPU ocupada al 94 %; la CPU no queda ociosa porque el hilo de Python y OpenMP de PyTorch esperan en espera activa).
 
 Muestrea cada 0.5 s los núcleos de CPU (psutil) y la GPU (nvidia-smi) a un CSV y genera una
 gráfica. Escribe results/evidence/phase.txt para poder tomar capturas de pantalla por fase.

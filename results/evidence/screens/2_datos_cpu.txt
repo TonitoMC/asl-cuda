@@ -1,0 +1,52 @@
+Wed Nov 18 13:50:29 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.95.05              Driver Version: 580.95.05      CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4070 ...    Off |   00000000:01:00.0  On |                  N/A |
+|  0%   43C    P0             31W /  220W |    1136MiB /  12282MiB |      4%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            1477      G   /usr/libexec/Xorg                       499MiB |
+|    0   N/A  N/A            2965      G   picom                                   152MiB |
+|    0   N/A  N/A            4161      G   ...rack-uuid=3190708988185955192        302MiB |
+|    0   N/A  N/A            5755      G   kitty                                    14MiB |
+|    0   N/A  N/A           23538      G   kitty                                    18MiB |
+|    0   N/A  N/A           23870      G   /usr/share/code/code                     48MiB |
+|    0   N/A  N/A           32087      G   kitty                                     4MiB |
++-----------------------------------------------------------------------------------------+
+top - 13:50:31 up  5:48,  2 users,  load average: 0.71, 1.53, 1.41
+Tasks: 507 total,  20 running, 487 sleeping,   0 stopped,   0 zombie
+%Cpu0  : 47.3 us,  3.6 sy,  0.0 ni, 49.1 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st   %Cpu1  : 49.1 us,  7.1 sy,  0.0 ni, 42.9 id,  0.0 wa,  0.9 hi,  0.0 si,  0.0 st 
+%Cpu2  : 46.4 us,  4.5 sy,  0.0 ni, 48.2 id,  0.0 wa,  0.9 hi,  0.0 si,  0.0 st   %Cpu3  : 55.0 us,  6.3 sy,  0.0 ni, 36.0 id,  0.0 wa,  2.7 hi,  0.0 si,  0.0 st 
+%Cpu4  : 66.7 us,  9.0 sy,  0.0 ni, 24.3 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st   %Cpu5  : 45.5 us,  2.7 sy,  0.0 ni, 51.8 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+%Cpu6  : 59.8 us,  8.9 sy,  0.0 ni, 30.4 id,  0.0 wa,  0.0 hi,  0.9 si,  0.0 st   %Cpu7  : 51.4 us,  7.2 sy,  0.0 ni, 41.4 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+%Cpu8  : 59.1 us,  5.5 sy,  0.0 ni, 35.5 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st   %Cpu9  : 55.5 us, 16.4 sy,  0.0 ni, 28.2 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+%Cpu10 : 50.9 us,  3.6 sy,  0.0 ni, 44.6 id,  0.0 wa,  0.9 hi,  0.0 si,  0.0 st   %Cpu11 : 60.0 us,  5.5 sy,  0.0 ni, 34.5 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+%Cpu12 : 54.1 us,  9.0 sy,  0.0 ni, 36.9 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st   %Cpu13 : 53.6 us, 10.9 sy,  0.0 ni, 35.5 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+%Cpu14 : 57.7 us, 11.7 sy,  0.0 ni, 30.6 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st   %Cpu15 : 57.7 us, 10.8 sy,  0.0 ni, 31.5 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+%Cpu16 : 58.0 us, 11.6 sy,  0.0 ni, 29.5 id,  0.0 wa,  0.0 hi,  0.9 si,  0.0 st   %Cpu17 : 56.8 us,  9.9 sy,  0.0 ni, 33.3 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+%Cpu18 : 55.4 us, 10.7 sy,  0.0 ni, 33.0 id,  0.0 wa,  0.9 hi,  0.0 si,  0.0 st   %Cpu19 : 53.6 us, 11.6 sy,  0.0 ni, 33.9 id,  0.0 wa,  0.9 hi,  0.0 si,  0.0 st 
+MiB Mem :  31867.6 total,  13347.0 free,   7400.9 used,  11849.9 buff/cache       MiB Swap:   8192.0 total,   8192.0 free,      0.0 used.  24466.6 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+  32086 Tono      20   0 8241164 605460 297772 S 242.0   1.9   0:09.63 python3
+  32641 Tono      20   0 8045040 360512  50376 R  23.0   1.1   0:00.23 pt_data_worker
+  32646 Tono      20   0 8045100 360580  50424 R  23.0   1.1   0:00.23 pt_data_worker
+  32649 Tono      20   0 8045136 360604  50424 R  23.0   1.1   0:00.23 pt_data_worker
+  32653 Tono      20   0 8045184 360580  50396 R  23.0   1.1   0:00.23 pt_data_worker
+  32659 Tono      20   0 8045256 360656  50424 R  23.0   1.1   0:00.23 pt_data_worker
+  32642 Tono      20   0 8045052 360456  50308 R  22.0   1.1   0:00.22 pt_data_worker
+  32645 Tono      20   0 8045088 360576  50424 R  22.0   1.1   0:00.22 pt_data_worker
+  32647 Tono      20   0 8045112 360600  50424 R  22.0   1.1   0:00.22 pt_data_worker
+  32648 Tono      20   0 8045124 360600  50424 R  22.0   1.1   0:00.22 pt_data_worker
+  32651 Tono      20   0 8045160 360608  50424 R  22.0   1.1   0:00.22 pt_data_worker
